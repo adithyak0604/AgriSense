@@ -16,8 +16,8 @@ from flask import Blueprint, jsonify, request
 weather_bp = Blueprint("weather", __name__)
 
 # ── API Keys ───────────────────────────────────────────────────────────────────
-OWM_API_KEY     = ""       # ← OpenWeatherMap key (openweathermap.org)
-WAPI_API_KEY    = ""      # ← WeatherAPI key (weatherapi.com)
+OWM_API_KEY     = "Enter your API key"       # ← OpenWeatherMap key (openweathermap.org)
+WAPI_API_KEY    = "Enter your API key"      # ← WeatherAPI key (weatherapi.com)
 
 OWM_BASE        = "https://api.openweathermap.org/data/2.5"
 WAPI_BASE       = "https://api.weatherapi.com/v1"
