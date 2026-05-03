@@ -1,0 +1,210 @@
+      <!-- PAGE: SETTINGS -->
+      <section id="page-settings" class="page fade-in p-8 gap-8">
+
+        <!-- ── Farm Profile ─────────────────────────────────────────────── -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary">agriculture</span>
+            <h3 class="font-display font-bold text-white text-lg" data-i18n="settings.farm_profile">Farm Profile</h3>
+          </div>
+          <div class="bg-surface rounded-xl border border-surface-2 p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <!-- App title -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="settings.dashboard_title">Dashboard Title</label>
+              <div class="flex gap-2">
+                <input id="st-app-title" type="text" placeholder="AgriSense"
+                  class="flex-1 bg-surface-2 border border-surface-2 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/50 transition-colors"/>
+                <button onclick="saveAppTitle()"
+                  class="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary text-sm rounded-lg transition-colors font-mono">
+                  Apply
+                </button>
+              </div>
+              <p class="text-text-dim text-xs">Updates the sidebar logo text and browser tab title.</p>
+            </div>
+
+            <!-- Farm name -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="settings.farm_name">Farm Name</label>
+              <input id="st-farm-name" type="text" placeholder="e.g. Green Acres Farm"
+                class="bg-surface-2 border border-surface-2 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/50 transition-colors"/>
+            </div>
+
+            <!-- Location -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="settings.farm_location">Farm Location</label>
+              <input id="st-farm-location" type="text" placeholder="e.g. Thrissur, Kerala"
+                class="bg-surface-2 border border-surface-2 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/50 transition-colors"/>
+              <p class="text-text-dim text-xs">Used as default weather location on startup.</p>
+            </div>
+
+            <!-- Primary crop type -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="settings.primary_crop">Primary Crop Type</label>
+              <select id="st-crop-type"
+                class="bg-surface-2 border border-surface-2 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/50 transition-colors">
+                <option value="">Select crop type…</option>
+                <option value="cereals">Cereals (Rice, Wheat, Maize)</option>
+                <option value="pulses">Pulses (Chickpea, Lentil, Mungbean)</option>
+                <option value="vegetables">Vegetables (Tomato, etc.)</option>
+                <option value="fruits">Fruits (Mango, Banana, Papaya)</option>
+                <option value="cash">Cash Crops (Cotton, Coffee, Jute)</option>
+                <option value="mixed">Mixed / Multiple</option>
+              </select>
+            </div>
+
+            <!-- Save profile -->
+            <div class="md:col-span-2 flex justify-end">
+              <button onclick="saveProfile()"
+                class="px-6 py-2.5 bg-primary text-bg-deep font-bold text-sm rounded-lg hover:bg-primary-dim transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">save</span>
+                Save Profile
+              </button>
+            </div>
+
+            <!-- Profile saved toast (hidden) -->
+            <div id="st-profile-toast" class="md:col-span-2 hidden items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-4 py-2.5">
+              <span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+              <span class="text-primary text-sm font-mono">Profile saved successfully.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Language ──────────────────────────────────────────────────────── -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary">translate</span>
+            <h3 class="font-display font-bold text-white text-lg" data-i18n="settings.language">Language</h3>
+          </div>
+          <div class="bg-surface rounded-xl border border-surface-2 p-6">
+            <p class="text-text-dim text-xs mb-4" data-i18n="settings.language_desc">Choose your preferred display language</p>
+            <div class="relative">
+              <select id="language-select"
+                onchange="setLanguage(this.value)"
+                class="w-full appearance-none bg-bg-deep border border-surface-3 rounded-lg px-4 py-3 text-white text-sm font-mono focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all pr-10 cursor-pointer">
+                <option value="en">🇬🇧  English</option>
+                <option value="ml">🇮🇳  മലയാളം</option>
+                <option value="hi">🇮🇳  हिन्दी</option>
+              </select>
+              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-dim text-lg pointer-events-none">expand_more</span>
+            </div>
+            <div class="flex items-center gap-2 mt-3 px-1">
+              <span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+              <span id="lang-active-label" class="text-text-dim text-xs font-mono">English</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Appearance ─────────────────────────────────────────────────── -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary">palette</span>
+            <h3 class="font-display font-bold text-white text-lg" data-i18n="settings.appearance">Appearance</h3>
+          </div>
+          <div class="bg-surface rounded-xl border border-surface-2 p-6 flex flex-col gap-6">
+
+            <!-- Theme -->
+            <div>
+              <p class="text-text-dim text-xs uppercase tracking-wider font-mono mb-3">Mode</p>
+              <div class="flex items-center gap-4">
+                <button onclick="toggleDarkLight()"
+                  class="flex items-center gap-3 px-5 py-3 rounded-xl border border-surface-2 bg-surface-2 hover:border-primary/40 transition-all group">
+                  <span id="st-mode-icon" class="material-symbols-outlined text-text-dim group-hover:text-primary text-2xl transition-colors">light_mode</span>
+                  <div class="text-left">
+                    <p id="st-mode-label" class="text-white text-sm font-medium">Switch to Light Mode</p>
+                    <p class="text-text-dim text-xs font-mono">Click to toggle</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Sidebar width preview -->
+            <div class="border-t border-surface-2 pt-5">
+              <p class="text-text-dim text-xs uppercase tracking-wider font-mono mb-3" data-i18n="settings.sidebar_style">Sidebar Style</p>
+              <div class="flex gap-3">
+                <button onclick="setSidebarStyle('full')" data-sidebar="full"
+                  class="sidebar-btn px-4 py-2.5 rounded-lg border border-primary/40 bg-primary/10 text-white text-sm font-mono ring-2 ring-primary ring-offset-2 ring-offset-bg-mid transition-all">
+                  Full (with labels)
+                </button>
+                <button onclick="setSidebarStyle('compact')" data-sidebar="compact"
+                  class="sidebar-btn px-4 py-2.5 rounded-lg border border-surface-2 bg-surface-2 text-text-dim text-sm font-mono transition-all hover:border-primary/40">
+                  Compact (icons only)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Units & Display ───────────────────────────────────────────── -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary">straighten</span>
+            <h3 class="font-display font-bold text-white text-lg" data-i18n="settings.units">Units & Display</h3>
+          </div>
+          <div class="bg-surface rounded-xl border border-surface-2 p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            <!-- Temperature -->
+            <div class="flex flex-col gap-2">
+              <p class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="overview.temperature">Temperature</p>
+              <div class="flex rounded-lg overflow-hidden border border-surface-2">
+                <button onclick="setUnit('temp','C')" id="unit-temp-C"
+                  class="unit-btn flex-1 py-2 text-sm font-mono bg-primary/15 text-primary transition-colors">°C</button>
+                <button onclick="setUnit('temp','F')" id="unit-temp-F"
+                  class="unit-btn flex-1 py-2 text-sm font-mono bg-surface-2 text-text-dim hover:text-white transition-colors">°F</button>
+              </div>
+            </div>
+
+            <!-- Wind speed -->
+            <div class="flex flex-col gap-2">
+              <p class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="overview.wind_speed">Wind Speed</p>
+              <div class="flex rounded-lg overflow-hidden border border-surface-2">
+                <button onclick="setUnit('wind','kmh')" id="unit-wind-kmh"
+                  class="unit-btn flex-1 py-2 text-sm font-mono bg-primary/15 text-primary transition-colors">km/h</button>
+                <button onclick="setUnit('wind','mph')" id="unit-wind-mph"
+                  class="unit-btn flex-1 py-2 text-sm font-mono bg-surface-2 text-text-dim hover:text-white transition-colors">mph</button>
+              </div>
+            </div>
+
+            <!-- Rainfall -->
+            <div class="flex flex-col gap-2">
+              <p class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="overview.rainfall">Rainfall</p>
+              <div class="flex rounded-lg overflow-hidden border border-surface-2">
+                <button onclick="setUnit('rain','mm')" id="unit-rain-mm"
+                  class="unit-btn flex-1 py-2 text-sm font-mono bg-primary/15 text-primary transition-colors">mm</button>
+                <button onclick="setUnit('rain','in')" id="unit-rain-in"
+                  class="unit-btn flex-1 py-2 text-sm font-mono bg-surface-2 text-text-dim hover:text-white transition-colors">in</button>
+              </div>
+            </div>
+
+            <p class="md:col-span-3 text-text-dim text-xs">
+              Unit changes apply to the Weather page and Overview stats on next weather fetch.
+            </p>
+          </div>
+        </div>
+
+        <!-- ── About ─────────────────────────────────────────────────────── -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary">info</span>
+            <h3 class="font-display font-bold text-white text-lg" data-i18n="settings.about">About</h3>
+          </div>
+          <div class="bg-surface rounded-xl border border-surface-2 p-6 flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings:'FILL' 1">agriculture</span>
+              </div>
+              <div>
+                <p id="st-about-title" class="text-white font-display font-bold text-lg">AgriSense</p>
+                <p class="text-text-dim text-xs font-mono">Smart Farm Intelligence Dashboard · v1.0</p>
+                <p class="text-text-dim text-xs font-mono mt-0.5">Powered by OpenWeatherMap + WeatherAPI</p>
+              </div>
+            </div>
+            <button onclick="resetAllSettings()"
+              class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-sm rounded-lg transition-colors font-mono flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">restart_alt</span>
+              Reset All Settings
+            </button>
+          </div>
+        </div>
+
+      </section>

@@ -1,0 +1,317 @@
+      <!-- PAGE: OVERVIEW -->
+      <section id="page-overview" class="page active fade-in p-8 gap-6">
+
+        <!-- Top stat cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Temperature — live from weather API -->
+          <div class="bg-surface rounded-xl border border-surface-2 p-5 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">thermostat</span>
+            </div>
+            <div>
+              <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.temperature">Temperature</p>
+              <p id="ov-stat-temp" class="text-white text-2xl font-display font-bold mt-0.5">--°C</p>
+              <p id="ov-stat-temp-loc" class="text-text-dim text-xs font-mono truncate max-w-[100px]"></p>
+            </div>
+          </div>
+          <!-- Soil Moisture — static/sensor -->
+          <div class="bg-surface rounded-xl border border-surface-2 p-5 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+              <span class="material-symbols-outlined text-blue-400" style="font-variation-settings:'FILL' 1">water_drop</span>
+            </div>
+            <div>
+              <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.soil_moisture">Soil Moisture</p>
+              <p id="ov-stat-moisture" class="text-white text-2xl font-display font-bold mt-0.5">--%</p>
+            </div>
+          </div>
+          <!-- Soil pH — static/sensor -->
+          <div class="bg-surface rounded-xl border border-surface-2 p-5 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+              <span class="material-symbols-outlined text-orange-400" style="font-variation-settings:'FILL' 1">science</span>
+            </div>
+            <div>
+              <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.soil_ph">Soil pH</p>
+              <p id="ov-stat-ph" class="text-white text-2xl font-display font-bold mt-0.5">--</p>
+            </div>
+          </div>
+          <!-- Rainfall — live from weather API -->
+          <div class="bg-surface rounded-xl border border-surface-2 p-5 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+              <span class="material-symbols-outlined text-purple-400" style="font-variation-settings:'FILL' 1">rainy</span>
+            </div>
+            <div>
+              <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.rainfall">Rainfall</p>
+              <p id="ov-stat-rain" class="text-white text-2xl font-display font-bold mt-0.5">-- mm</p>
+              <p id="ov-stat-rain-chance" class="text-text-dim text-xs font-mono"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Weather Card — populated by overview weather fetch -->
+          <div class="lg:col-span-2 bg-surface rounded-xl border border-surface-2 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-primary/4 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+
+            <div class="flex items-center justify-between mb-5">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">cloud</span>
+                <h3 class="font-display font-bold text-white" data-i18n="overview.weather_monitoring">Weather Monitoring</h3>
+              </div>
+              <div class="flex items-center gap-3">
+                <!-- Location search inline -->
+                <div class="relative">
+                  <input id="ov-location-input" type="text" placeholder="Change location…"
+                    class="bg-surface-2 border border-surface-2 rounded-lg px-3 py-1.5 text-white text-xs placeholder-text-dim focus:outline-none focus:border-primary/50 w-40 font-mono"
+                    onkeydown="if(event.key==='Enter') refreshOverviewWeather()"/>
+                  <div id="ov-autocomplete" class="hidden absolute top-full right-0 mt-1 w-64 bg-bg-mid border border-surface-2 rounded-lg shadow-xl z-50 overflow-hidden"></div>
+                </div>
+                <button onclick="refreshOverviewWeather()" class="px-2 py-1.5 bg-primary/15 hover:bg-primary/25 text-primary text-xs rounded-lg transition-colors flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm" id="ov-refresh-icon">refresh</span>
+                </button>
+                <div id="ov-live-dot" class="flex items-center gap-1.5 text-xs text-text-dim">
+                  <div class="pulse-dot"></div>
+                  <span class="font-mono" data-i18n="overview.live">Live</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weather loading skeleton -->
+            <div id="ov-weather-loading" class="flex flex-col gap-4">
+              <div class="flex gap-6 items-center">
+                <div class="w-14 h-14 rounded-full skeleton"></div>
+                <div class="flex flex-col gap-2"><div class="h-10 w-24 skeleton rounded"></div><div class="h-3 w-32 skeleton rounded"></div></div>
+              </div>
+              <div class="grid grid-cols-4 gap-3">
+                <div class="h-16 skeleton rounded-lg"></div>
+                <div class="h-16 skeleton rounded-lg"></div>
+                <div class="h-16 skeleton rounded-lg"></div>
+                <div class="h-16 skeleton rounded-lg"></div>
+              </div>
+            </div>
+
+            <!-- Weather data (hidden until loaded) -->
+            <div id="ov-weather-data" class="hidden">
+              <!-- Temp hero + full stats -->
+              <div class="flex flex-col md:flex-row gap-8 items-center pb-5 border-b border-surface-2">
+                <!-- Temp hero -->
+                <div class="flex-shrink-0">
+                  <div class="flex items-center gap-4">
+                    <span id="ov-icon" class="material-symbols-outlined text-yellow-400 text-5xl" style="font-variation-settings:'FILL' 1">partly_cloudy_day</span>
+                    <div>
+                      <div class="flex items-baseline gap-1">
+                        <span id="ov-temp" class="text-7xl font-display font-bold text-white">--</span>
+                        <span id="ov-temp-unit" class="text-2xl text-text-dim">°C</span>
+                      </div>
+                      <p id="ov-condition" class="text-text-dim text-sm mt-1">--</p>
+                      <p id="ov-feels" class="text-text-dim text-xs mt-0.5">Feels like -- °C</p>
+                      <p id="ov-location-display" class="text-primary text-xs font-mono mt-1"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="w-px h-20 bg-surface-2 hidden md:block mx-2"></div>
+
+                <!-- Stats grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 flex-1">
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.humidity">Humidity</p>
+                    <p id="ov-humidity" class="text-white font-mono font-bold mt-0.5">-- %</p>
+                  </div>
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.wind_speed">Wind Speed</p>
+                    <p id="ov-wind" class="text-white font-mono font-bold mt-0.5">-- km/h</p>
+                  </div>
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.precipitation">Precipitation</p>
+                    <p id="ov-precip" class="text-white font-mono font-bold mt-0.5">-- mm</p>
+                  </div>
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.pressure">Pressure</p>
+                    <p id="ov-pressure" class="text-white font-mono font-bold mt-0.5">-- hPa</p>
+                  </div>
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.visibility">Visibility</p>
+                    <p id="ov-vis" class="text-white font-mono font-bold mt-0.5">-- km</p>
+                  </div>
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-wider" data-i18n="overview.uv_index">UV Index</p>
+                    <p id="ov-uv" class="text-white font-mono font-bold mt-0.5">--</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3-day forecast — same cards as Weather page -->
+              <div class="mt-4">
+                <p class="text-text-dim text-xs font-mono uppercase tracking-wider mb-3" data-i18n="overview.forecast_3day">3-Day Forecast</p>
+                <div id="ov-forecast" class="grid grid-cols-3 gap-2"></div>
+              </div>
+            </div>
+
+            <!-- Error state -->
+            <div id="ov-weather-error" class="hidden py-6 text-center">
+              <span class="material-symbols-outlined text-text-dim text-3xl">cloud_off</span>
+              <p id="ov-weather-error-msg" class="text-text-dim text-sm mt-2">Could not load weather</p>
+              <button onclick="refreshOverviewWeather()" class="mt-3 text-primary text-xs hover:underline" data-i18n="overview.retry">Retry</button>
+            </div>
+
+          </div>
+
+          <!-- Soil Quick + Alerts -->
+          <div class="flex flex-col gap-4">
+            <div class="bg-surface rounded-xl border border-surface-2 p-5 flex flex-col gap-4">
+              <!-- Header -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary">landscape</span>
+                  <h3 class="font-display font-bold text-white" data-i18n="overview.soil_status">Soil Status</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="ov-soil-ts" class="text-text-dim text-xs font-mono hidden"></span>
+                  <button onclick="showPage('soil')" class="text-primary text-xs hover:underline" data-i18n="overview.soil_details">Details →</button>
+                </div>
+              </div>
+
+              <!-- No data state -->
+              <div id="ov-soil-nodata" class="flex flex-col items-center gap-2 py-3 text-center">
+                <span class="material-symbols-outlined text-text-dim text-2xl">sensors_off</span>
+                <p class="text-text-dim text-xs"><span data-i18n="overview.no_sensor">No sensor reading yet.</span><br><span data-i18n="overview.no_sensor_hint_pre">Press</span> <span class="text-primary" data-i18n="soil.read_sensor">Read Sensor</span> <span data-i18n="overview.no_sensor_hint_post">on the Soil page.</span></p>
+              </div>
+
+              <!-- Data state (hidden until loaded) -->
+              <div id="ov-soil-data" class="hidden flex flex-col gap-3">
+
+                <!-- pH bar -->
+                <div>
+                  <div class="flex justify-between mb-1.5">
+                    <span class="text-text-dim text-xs" data-i18n="soil.ph">pH Level</span>
+                    <div class="flex items-center gap-1.5">
+                      <span id="ov-soil-ph" class="text-white text-xs font-mono font-bold">--</span>
+                      <span id="ov-soil-ph-badge" class="text-xs font-mono px-1.5 py-0.5 rounded-full bg-surface-2"></span>
+                    </div>
+                  </div>
+                  <div class="h-2 rounded-full bg-gradient-to-r from-red-500 via-primary to-blue-400 relative">
+                    <div id="ov-soil-ph-marker" class="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border-2 border-bg-deep shadow-md transition-all" style="left:50%"></div>
+                  </div>
+                  <div class="flex justify-between mt-1 text-xs text-text-dim font-mono"><span>0</span><span>7</span><span>14</span></div>
+                </div>
+
+                <!-- Moisture ring + Temp -->
+                <div class="flex items-center gap-4">
+                  <svg width="60" height="60" viewBox="0 0 100 100" class="flex-shrink-0">
+                    <circle cx="50" cy="50" r="38" fill="none" stroke="#1e3a24" stroke-width="10"/>
+                    <circle id="ov-soil-moist-ring" cx="50" cy="50" r="38" fill="none" stroke="#13ec49" stroke-width="10" stroke-linecap="round" stroke-dasharray="238.76" stroke-dashoffset="238.76" transform="rotate(-90 50 50)" class="transition-all duration-700"/>
+                  </svg>
+                  <div class="flex-1">
+                    <p id="ov-soil-moist" class="text-white text-xl font-display font-bold">--%</p>
+                    <p class="text-text-dim text-xs" data-i18n="overview.moisture">Moisture</p>
+                  </div>
+                  <div class="flex flex-col items-end">
+                    <div class="flex items-center gap-1">
+                      <span class="material-symbols-outlined text-orange-400 text-sm">thermostat</span>
+                      <span id="ov-soil-temp" class="text-white font-mono font-bold text-sm">--°C</span>
+                    </div>
+                    <span class="text-text-dim text-xs" data-i18n="overview.soil_temp">Soil Temp</span>
+                  </div>
+                </div>
+
+                <!-- NPK row -->
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="bg-surface-2 rounded-lg p-2.5 text-center border border-surface-3">
+                    <span class="block text-xs font-bold font-mono text-blue-400">N</span>
+                    <span id="ov-soil-n" class="block text-white font-mono font-bold text-sm mt-0.5">--</span>
+                    <span id="ov-soil-n-badge" class="block text-xs font-mono text-text-dim mt-0.5"></span>
+                  </div>
+                  <div class="bg-surface-2 rounded-lg p-2.5 text-center border border-surface-3">
+                    <span class="block text-xs font-bold font-mono text-orange-400">P</span>
+                    <span id="ov-soil-p" class="block text-white font-mono font-bold text-sm mt-0.5">--</span>
+                    <span id="ov-soil-p-badge" class="block text-xs font-mono text-text-dim mt-0.5"></span>
+                  </div>
+                  <div class="bg-surface-2 rounded-lg p-2.5 text-center border border-surface-3">
+                    <span class="block text-xs font-bold font-mono text-purple-400">K</span>
+                    <span id="ov-soil-k" class="block text-white font-mono font-bold text-sm mt-0.5">--</span>
+                    <span id="ov-soil-k-badge" class="block text-xs font-mono text-text-dim mt-0.5"></span>
+                  </div>
+                </div>
+
+                <!-- Conductivity -->
+                <div class="flex items-center justify-between bg-surface-2 rounded-lg p-3 border border-surface-3">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-yellow-400 text-lg">bolt</span>
+                    <span class="text-text-dim text-xs" data-i18n="overview.conductivity">Conductivity</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span id="ov-soil-ec" class="text-white font-mono font-bold text-sm">--</span>
+                    <span class="text-text-dim text-xs font-mono">µS/cm</span>
+                    <span id="ov-soil-ec-badge" class="text-xs font-mono px-1.5 py-0.5 rounded-full bg-surface-3"></span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Alerts — generated from live weather -->
+            <div class="bg-surface rounded-xl border border-orange-500/20 p-5">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-orange-400">warning</span>
+                <h3 class="font-display font-semibold text-white text-sm" data-i18n="overview.weather_alerts">Weather Alerts</h3>
+              </div>
+              <div id="ov-alerts" class="flex flex-col gap-2">
+                <div class="flex items-center gap-2 bg-surface-2 rounded-lg p-2.5">
+                  <div class="w-1.5 h-8 rounded-full bg-surface-3 flex-shrink-0"></div>
+                  <p class="text-text-dim text-xs" data-i18n="overview.fetching_alerts">Fetching weather alerts…</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom row: Crop + Disease -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-surface rounded-xl border border-surface-2 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">eco</span>
+                <h3 class="font-display font-bold text-white" data-i18n="nav.crops">Crop Advisor</h3>
+              </div>
+              <button onclick="showPage('crops')" class="text-primary text-xs hover:underline" data-i18n="overview.view_all">View All →</button>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-4 bg-surface-2 rounded-lg p-4 border border-surface-3">
+                <div class="w-12 h-12 rounded-lg bg-surface-3 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-primary text-2xl">grass</span></div>
+                <div class="flex-1"><div class="h-4 skeleton w-24 mb-2"></div><div class="h-3 skeleton w-36"></div></div>
+                <div class="flex flex-col items-end gap-1"><div class="h-4 skeleton w-12"></div><span class="text-xs text-text-dim">Suitability</span></div>
+              </div>
+              <div class="flex items-center gap-4 bg-surface-2 rounded-lg p-4 border border-surface-3">
+                <div class="w-12 h-12 rounded-lg bg-surface-3 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-primary text-2xl">spa</span></div>
+                <div class="flex-1"><div class="h-4 skeleton w-28 mb-2"></div><div class="h-3 skeleton w-32"></div></div>
+                <div class="flex flex-col items-end gap-1"><div class="h-4 skeleton w-12"></div><span class="text-xs text-text-dim">Suitability</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-surface rounded-xl border border-surface-2 p-6 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent pointer-events-none"></div>
+            <div class="flex items-center justify-between mb-4 relative">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">document_scanner</span>
+                <h3 class="font-display font-bold text-white" data-i18n="nav.disease">Disease AI</h3>
+              </div>
+              <button onclick="showPage('disease')" class="text-primary text-xs hover:underline" data-i18n="overview.open">Open →</button>
+            </div>
+            <div class="flex flex-col items-center justify-center py-5 gap-4">
+              <div class="relative">
+                <div class="absolute inset-0 bg-primary/15 blur-xl rounded-full"></div>
+                <div class="w-16 h-16 rounded-full bg-surface-2 border border-surface-3 flex items-center justify-center relative">
+                  <span class="material-symbols-outlined text-primary text-3xl">add_a_photo</span>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-white font-semibold" data-i18n="overview.scan_leaf">Scan a Leaf</p>
+                <p class="text-text-dim text-xs mt-1">AI-powered plant disease detection</p>
+              </div>
+              <button onclick="showPage('disease')" class="px-5 py-2 bg-primary text-bg-deep text-sm font-bold rounded-lg hover:bg-primary-dim transition-colors" data-i18n="overview.start_diagnosis">Start Diagnosis</button>
+            </div>
+          </div>
+        </div>
+
+      </section>

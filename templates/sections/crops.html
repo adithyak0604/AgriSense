@@ -1,0 +1,294 @@
+      <!-- PAGE: CROP ADVISOR -->
+      <section id="page-crops" class="page fade-in p-8 gap-6">
+
+        <!-- Page intro -->
+        <div class="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <p class="text-text-dim text-sm max-w-xl">Enter your field's soil and climate values manually, or auto-fill from the live soil sensor.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Auto-fill from sensor -->
+            <button onclick="fillFromSensor()"
+              id="crop-sensor-btn"
+              class="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 text-sm rounded-lg transition-all font-mono">
+              <span class="material-symbols-outlined text-lg">sensors</span>Fill from Sensor
+            </button>
+            <button onclick="resetCropForm()" class="flex items-center gap-2 px-4 py-2 bg-surface border border-surface-2 text-text-dim hover:text-white hover:border-surface-3 text-sm rounded-lg transition-colors font-mono">
+              <span class="material-symbols-outlined text-lg">restart_alt</span>Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Sensor fill status banner (hidden by default) -->
+        <div id="crop-sensor-banner" class="hidden flex items-center gap-3 px-4 py-3 rounded-xl border border-green-500/25 bg-green-500/8 text-sm">
+          <span class="material-symbols-outlined text-green-400 text-lg">check_circle</span>
+          <span class="text-green-300 font-mono text-xs" id="crop-sensor-banner-text" data-i18n="crops.sensor_filled">Filled from sensor</span>
+          <span class="ml-auto text-text-dim text-xs font-mono" id="crop-sensor-ts"></span>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+          <!-- LEFT: Input Form -->
+          <div class="xl:col-span-5">
+            <div class="bg-surface rounded-xl border border-surface-2 overflow-hidden">
+              <!-- Form header -->
+              <div class="px-6 py-5 border-b border-surface-2 bg-surface-2/40 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings:'FILL' 1">eco</span>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-white font-display font-bold" data-i18n="crops.recommendation">Crop Recommendation</h3>
+                  <p class="text-text-dim text-xs" id="crop-form-source-label" data-i18n="crops.manual_input">Manual soil &amp; climate input</p>
+                </div>
+                <span id="crop-form-sensor-dot" class="hidden flex items-center gap-1.5 text-xs font-mono text-green-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>sensor data
+                </span>
+              </div>
+
+              <!-- Form fields -->
+              <div class="p-6 flex flex-col gap-5">
+
+                <!-- NPK Row -->
+                <div>
+                  <p class="text-text-dim text-xs uppercase tracking-widest font-mono mb-3" data-i18n="crops.nutrient_levels">Nutrient Levels (mg/kg)</p>
+                  <div class="grid grid-cols-3 gap-3">
+                    <!-- N -->
+                    <div class="flex flex-col gap-1.5">
+                      <label class="flex items-center gap-1.5 text-sm font-medium text-slate-300">
+                        <span class="w-5 h-5 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold font-mono border border-blue-500/30">N</span>
+                        Nitrogen
+                      </label>
+                      <div class="relative">
+                        <input id="inp-n" type="number" min="0" max="200" placeholder="0–200"
+                          class="w-full bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-text-dim focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"/>
+                      </div>
+                    </div>
+                    <!-- P -->
+                    <div class="flex flex-col gap-1.5">
+                      <label class="flex items-center gap-1.5 text-sm font-medium text-slate-300">
+                        <span class="w-5 h-5 rounded bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold font-mono border border-orange-500/30">P</span>
+                        Phosphorus
+                      </label>
+                      <input id="inp-p" type="number" min="0" max="200" placeholder="0–200"
+                        class="w-full bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-text-dim focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"/>
+                    </div>
+                    <!-- K -->
+                    <div class="flex flex-col gap-1.5">
+                      <label class="flex items-center gap-1.5 text-sm font-medium text-slate-300">
+                        <span class="w-5 h-5 rounded bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold font-mono border border-purple-500/30">K</span>
+                        Potassium
+                      </label>
+                      <input id="inp-k" type="number" min="0" max="200" placeholder="0–200"
+                        class="w-full bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-text-dim focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"/>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="border-t border-surface-2"></div>
+
+                <!-- Temperature -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <span class="material-symbols-outlined text-orange-400 text-lg">thermostat</span>
+                    Temperature (°C)
+                  </label>
+                  <div class="relative">
+                    <input id="inp-temp" type="number" min="-10" max="60" placeholder="e.g. 25"
+                      class="w-full bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-text-dim focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all pr-12"/>
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim text-sm font-mono">°C</span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-1">
+                    <input id="slider-temp" type="range" min="-10" max="60" value="25"
+                      class="flex-1 h-1.5 rounded-full accent-primary cursor-pointer"
+                      oninput="document.getElementById('inp-temp').value=this.value"/>
+                    <span class="text-text-dim text-xs font-mono w-8 text-right" id="temp-label">25</span>
+                  </div>
+                </div>
+
+                <!-- Humidity -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <span class="material-symbols-outlined text-blue-400 text-lg">water_drop</span>
+                    Humidity (%)
+                  </label>
+                  <div class="relative">
+                    <input id="inp-hum" type="number" min="0" max="100" placeholder="e.g. 65"
+                      class="w-full bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-text-dim focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all pr-10"/>
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim text-sm font-mono">%</span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-1">
+                    <input id="slider-hum" type="range" min="0" max="100" value="65"
+                      class="flex-1 h-1.5 rounded-full accent-primary cursor-pointer"
+                      oninput="document.getElementById('inp-hum').value=this.value"/>
+                    <span class="text-text-dim text-xs font-mono w-8 text-right" id="hum-label">65</span>
+                  </div>
+                </div>
+
+                <!-- pH -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <span class="material-symbols-outlined text-primary text-lg">science</span>
+                    pH Value
+                  </label>
+                  <div class="relative">
+                    <input id="inp-ph" type="number" min="0" max="14" step="0.1" placeholder="e.g. 6.5"
+                      class="w-full bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-text-dim focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"/>
+                  </div>
+                  <!-- pH gradient bar -->
+                  <div class="h-2 rounded-full bg-gradient-to-r from-red-500 via-primary to-blue-400 mt-1 relative">
+                    <div id="ph-indicator" class="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border-2 border-bg-deep shadow-md transition-all" style="left:46%"></div>
+                  </div>
+                  <div class="flex justify-between text-xs text-text-dim font-mono"><span data-i18n="soil.acidic" data-i18n="crops.acidic">Acidic (0)</span><span data-i18n="soil.neutral" data-i18n="crops.neutral">Neutral (7)</span><span data-i18n="soil.alkaline" data-i18n="crops.alkaline">Alkaline (14)</span></div>
+                </div>
+
+                <!-- Rainfall -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <span class="material-symbols-outlined text-purple-400 text-lg">rainy</span>
+                    Rainfall (mm)
+                  </label>
+                  <div class="relative">
+                    <input id="inp-rain" type="number" min="0" max="5000" placeholder="e.g. 200"
+                      class="w-full bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-text-dim focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all pr-12"/>
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim text-sm font-mono">mm</span>
+                  </div>
+                </div>
+
+                <!-- Season -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <span class="material-symbols-outlined text-yellow-400 text-lg">calendar_month</span>
+                    Growing Season
+                  </label>
+                  <div class="relative">
+                    <select id="inp-season"
+                      class="w-full appearance-none bg-bg-deep border border-surface-3 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all pr-10 cursor-pointer">
+                      <option value="" disabled selected class="text-text-dim" data-i18n="crops.select_season">Select a season…</option>
+                      <option value="autumn">🍂  Autumn</option>
+                      <option value="rainy">🌧️  Rainy</option>
+                      <option value="spring">🌸  Spring</option>
+                      <option value="summer">☀️  Summer</option>
+                      <option value="winter">❄️  Winter</option>
+                      <option value="zaid">🌾  Zaid</option>
+                    </select>
+                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-dim text-lg pointer-events-none">expand_more</span>
+                  </div>
+                  <div id="season-badge" class="hidden flex items-center gap-2 px-3 py-1.5 bg-surface-2 border border-surface-3 rounded-lg">
+                    <span id="season-badge-icon" class="text-base"></span>
+                    <span id="season-badge-label" class="text-xs font-mono text-slate-300"></span>
+                    <span class="ml-auto text-xs text-text-dim font-mono">selected</span>
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button onclick="getCropRecommendation()"
+                  class="w-full py-3 bg-primary text-bg-deep font-display font-bold text-sm rounded-lg hover:bg-primary-dim transition-all hover:shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 mt-1">
+                  <span class="material-symbols-outlined text-lg">agriculture</span>
+                  Get Recommendation
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Result + Info Panel -->
+          <div class="xl:col-span-7 flex flex-col gap-5">
+
+            <!-- Result Card -->
+            <div id="crop-result-panel" class="bg-surface rounded-xl border border-surface-2 overflow-hidden">
+              <!-- Empty state -->
+              <div id="crop-empty-state" class="flex flex-col items-center justify-center py-16 px-8 text-center gap-4">
+                <div class="relative">
+                  <div class="absolute inset-0 bg-primary/10 blur-2xl rounded-full"></div>
+                  <div class="w-20 h-20 rounded-full bg-surface-2 border border-surface-3 flex items-center justify-center relative">
+                    <span class="material-symbols-outlined text-primary/40 text-4xl" style="font-variation-settings:'FILL' 1">eco</span>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="text-white font-display font-bold text-lg" data-i18n="crops.no_recommendation">No Recommendation Yet</h4>
+                  <p class="text-text-dim text-sm mt-1 max-w-sm">Fill in all the soil and climate parameters on the left, then click <span class="text-primary font-medium" data-i18n="crops.get_recommendation">Get Recommendation</span> to see results.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 justify-center mt-2">
+                  <span class="px-3 py-1 bg-surface-2 rounded-full text-xs text-text-dim border border-surface-3 font-mono">N · P · K levels</span>
+                  <span class="px-3 py-1 bg-surface-2 rounded-full text-xs text-text-dim border border-surface-3 font-mono" data-i18n="overview.temperature">Temperature</span>
+                  <span class="px-3 py-1 bg-surface-2 rounded-full text-xs text-text-dim border border-surface-3 font-mono" data-i18n="overview.humidity">Humidity</span>
+                  <span class="px-3 py-1 bg-surface-2 rounded-full text-xs text-text-dim border border-surface-3 font-mono">pH Value</span>
+                  <span class="px-3 py-1 bg-surface-2 rounded-full text-xs text-text-dim border border-surface-3 font-mono" data-i18n="overview.rainfall">Rainfall</span>
+                </div>
+              </div>
+
+              <!-- Result content (hidden initially) -->
+              <div id="crop-result-content" class="hidden">
+                <!-- Result header -->
+                <div class="px-6 py-4 border-b border-surface-2 bg-primary/5 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></div>
+                    <span class="text-text-dim text-sm font-mono uppercase tracking-wider" data-i18n="crops.recommended_crop">Recommended Crop</span>
+                  </div>
+                  <span class="text-xs text-text-dim font-mono bg-surface-2 px-2 py-1 rounded border border-surface-3" data-i18n="crops.ai_complete">AI Analysis Complete</span>
+                </div>
+
+                <div class="p-6 flex flex-col gap-5">
+                  <!-- Crop name hero -->
+                  <div class="flex items-center gap-5">
+                    <div class="w-20 h-20 rounded-2xl bg-surface-2 border border-primary/30 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                      <div class="absolute inset-0 bg-primary/5"></div>
+                      <span id="result-icon" class="material-symbols-outlined text-primary text-5xl relative z-10" style="font-variation-settings:'FILL' 1">grass</span>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-text-dim text-xs uppercase tracking-widest font-mono" data-i18n="crops.best_match">Best Match</p>
+                      <h2 id="result-crop-name" class="text-white font-display font-bold text-3xl mt-1">—</h2>
+                      <p id="result-crop-latin" class="text-text-dim text-sm italic mt-0.5">—</p>
+                    </div>
+                    <div class="flex flex-col items-end">
+                      <span id="result-score" class="text-primary font-display font-bold text-4xl">—</span>
+                      <span class="text-text-dim text-xs" data-i18n="crops.suitability_score">Suitability Score</span>
+                    </div>
+                  </div>
+
+                  <!-- Suitability bar -->
+                  <div class="h-2.5 rounded-full bg-surface-2 overflow-hidden">
+                    <div id="result-bar" class="h-full bg-gradient-to-r from-primary to-primary-dim rounded-full transition-all duration-700" style="width:0%"></div>
+                  </div>
+
+                  <!-- Why this crop -->
+                  <div class="bg-surface-2 rounded-xl p-4 border border-surface-3">
+                    <h4 class="text-white text-sm font-semibold mb-2 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-base">info</span>
+                      Why this crop?
+                    </h4>
+                    <p id="result-reason" class="text-text-dim text-sm leading-relaxed">—</p>
+                  </div>
+
+                  <!-- Parameter match grid -->
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-widest font-mono mb-3" data-i18n="crops.param_compat">Parameter Compatibility</p>
+                    <div class="grid grid-cols-2 gap-3" id="result-params">
+                      <!-- Injected by JS -->
+                    </div>
+                  </div>
+
+                  <!-- Care tips -->
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-widest font-mono mb-3" data-i18n="crops.growing_tips">Growing Tips</p>
+                    <div class="flex flex-col gap-2" id="result-tips">
+                      <!-- Injected by JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Summary Card (shows after submission) -->
+            <div id="crop-summary-card" class="hidden bg-surface rounded-xl border border-surface-2 p-5">
+              <p class="text-text-dim text-xs uppercase tracking-widest font-mono mb-3" data-i18n="crops.input_summary">Your Input Summary</p>
+              <div class="grid grid-cols-3 md:grid-cols-7 gap-2" id="summary-values">
+                <!-- Injected by JS -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+

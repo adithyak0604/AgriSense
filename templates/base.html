@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AgriSense</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        /* Dark: Pure Black + Burgundy */
+        "primary":     "var(--primary)",
+        "primary-dim": "var(--primary-dim)",
+        "bg-deep":     "var(--bg-deep)",
+        "bg-mid":      "var(--bg-mid)",
+        "surface":     "var(--surface)",
+        "surface-2":   "var(--surface-2)",
+        "surface-3":   "var(--surface-3)",
+        "text-dim":    "var(--text-dim)",
+        "muted":       "var(--text-muted)",
+      },
+      fontFamily: {
+        "display": ["Syne", "sans-serif"],
+        "body": ["Manrope", "sans-serif"],
+        "mono": ["DM Mono", "monospace"],
+      },
+    }
+  }
+}
+</script>
+<style>
+  /*
+   * ══════════════════════════════════════════════════════════════
+   *  AgriSense — Colour System v2
+   *
+   *  DARK  (default) : Pure Black base + Burgundy accent
+   *  LIGHT           : Silver/Pearl base + Slate-Blue accent
+   * ══════════════════════════════════════════════════════════════
+   */
+
+  /* ── Global transitions ── */
+  *, *::before, *::after { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease; }
+  .skeleton, .pulse-dot, .fade-in, .bar,
+  #weather-chart *, #weather-chart div { transition: none !important; }
+
+  body { font-family: 'Manrope', sans-serif; }
+  h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
+
+  /* ────────────────────────────────────────────────────────────
+     DARK MODE  —  Classic Black + Burgundy
+     bg-deep    : true black canvas             #000000
+     bg-mid     : sidebar / header              #0d0a0b
+     surface    : cards                         #161013
+     surface-2  : inputs, table rows            #1f1519
+     surface-3  : hover / dividers              #2a1c21
+     primary    : burgundy                      #c2395e
+     primary-dim: deep wine                     #8b2246
+  ──────────────────────────────────────────────────────────── */
+  :root {
+    --bg-deep:      #000000;
+    --bg-mid:       #0d0a0b;
+    --surface:      #161013;
+    --surface-2:    #1f1519;
+    --surface-3:    #2a1c21;
+    --text-base:    #f0e8ea;
+    --text-dim:     #9c7f87;
+    --text-muted:   #5a3d44;
+    --border:       #2e1c22;
+    --primary:      #c2395e;
+    --primary-dim:  #8b2246;
+    --primary-glow: rgba(194,57,94,0.18);
+    --shadow:       rgba(0,0,0,0.85);
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     LIGHT MODE  —  Silver / Pearl + Slate-Blue accent
+     bg-deep    : cool light grey page background
+     bg-mid     : white sidebar / header
+     surface    : white cards with subtle shadow
+     surface-2  : soft grey inputs
+     surface-3  : medium grey dividers / hover
+     primary    : slate-blue #3d6b9e — professional, calm
+     primary-dim: deeper slate for pressed/hover states
+  ──────────────────────────────────────────────────────────── */
+  body.light {
+    --bg-deep:      #eef0f4;
+    --bg-mid:       #f8f9fb;
+    --surface:      #ffffff;
+    --surface-2:    #e8eaef;
+    --surface-3:    #d4d8e0;
+    --text-base:    #0f1621;
+    --text-dim:     #4a5568;
+    --text-muted:   #8a95a8;
+    --border:       #c8cdd8;
+    --primary:      #3d6b9e;
+    --primary-dim:  #2d5280;
+    --primary-glow: rgba(61,107,158,0.14);
+    --shadow:       rgba(0,0,0,0.08);
+  }
+
+  /* ── Light surface overrides ── */
+  body.light { background-color: var(--bg-deep) !important; color: var(--text-base) !important; }
+  body.light aside                                   { background-color: var(--bg-mid) !important; border-color: var(--border) !important; box-shadow: 2px 0 12px rgba(0,0,0,0.06); }
+  body.light header                                  { background-color: rgba(248,249,251,0.92) !important; border-color: var(--border) !important; backdrop-filter: blur(12px); }
+  body.light main                                    { background-color: var(--bg-deep) !important; }
+  body.light .bg-bg-deep                             { background-color: var(--bg-deep) !important; }
+  body.light .bg-bg-mid, body.light .bg-bg-mid\/80   { background-color: var(--bg-mid) !important; }
+  body.light .bg-surface                             { background-color: var(--surface) !important; box-shadow: 0 1px 6px rgba(0,0,0,0.07), 0 0 0 1px var(--border); }
+  body.light .bg-surface-2, body.light .bg-surface-2\/50 { background-color: var(--surface-2) !important; }
+  body.light .bg-surface-2\/40                       { background-color: rgba(232,234,239,0.4) !important; }
+  body.light .bg-surface-3                           { background-color: var(--surface-3) !important; }
+  body.light .border-surface-2                       { border-color: var(--border) !important; }
+  body.light .border-surface-3                       { border-color: var(--surface-3) !important; }
+  body.light .text-white                             { color: var(--text-base) !important; }
+  body.light .text-slate-100, body.light .text-slate-200 { color: var(--text-base) !important; }
+  body.light .text-text-dim                          { color: var(--text-dim) !important; }
+  body.light .text-primary                           { color: var(--primary) !important; }
+  body.light .bg-primary                             { background-color: var(--primary) !important; }
+  body.light .bg-primary\/10, body.light .bg-primary\/15 { background-color: var(--primary-glow) !important; }
+  body.light .border-primary\/20                     { border-color: rgba(61,107,158,0.25) !important; }
+  body.light input, body.light select, body.light textarea { background-color: var(--surface-2) !important; color: var(--text-base) !important; border-color: var(--border) !important; }
+  body.light .placeholder-text-dim::placeholder      { color: var(--text-muted) !important; }
+  body.light .nav-item .nav-label                    { color: var(--text-dim) !important; }
+  body.light .nav-item.active .nav-label             { color: var(--text-base) !important; }
+  body.light .nav-item:hover .nav-label              { color: var(--text-base) !important; }
+  body.light .nav-item:hover                         { background: var(--primary-glow) !important; }
+  body.light .nav-item.active                        { background: var(--primary-glow) !important; border-left-color: var(--primary) !important; }
+  body.light .nav-item.active .nav-icon              { color: var(--primary) !important; }
+  body.light .skeleton                               { background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%) !important; background-size: 200% 100% !important; animation: shimmer 1.5s infinite !important; }
+  body.light .pulse-dot                              { background: var(--primary) !important; }
+  body.light .bar                                    { background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dim) 100%) !important; }
+  body.light .upload-zone                            { border-color: var(--border) !important; }
+  body.light .upload-zone:hover                      { border-color: var(--primary) !important; background-color: var(--primary-glow) !important; }
+  body.light .crop-card:hover                        { box-shadow: 0 8px 32px rgba(0,0,0,0.12); border-color: var(--primary) !important; }
+  body.light .day-card:hover                         { border-color: var(--primary) !important; }
+  body.light ::-webkit-scrollbar-track               { background: var(--bg-deep); }
+  body.light ::-webkit-scrollbar-thumb               { background: var(--surface-3); }
+  body.light ::-webkit-scrollbar-thumb:hover         { background: var(--primary); }
+  body.light #inp-season option                      { background-color: var(--surface-2); color: var(--text-base); }
+
+  /* ── Scrollbar (dark default) ── */
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #000000; }
+  ::-webkit-scrollbar-thumb { background: #2a1c21; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+  /* ── Nav (dark default — burgundy) ── */
+  .nav-item { transition: background 0.25s ease !important; }
+  .nav-item:hover { background: rgba(194,57,94,0.08); }
+  .nav-item.active { background: rgba(194,57,94,0.14); border-left: 3px solid #c2395e; }
+  .nav-item.active .nav-icon { color: #c2395e; }
+  .nav-item .nav-icon { transition: color 0.25s ease !important; color: #5a3d44; }
+  .nav-item .nav-label { transition: color 0.25s ease !important; color: #9c7f87; }
+  .nav-item.active .nav-label { color: #f0e8ea; }
+  .nav-item:hover .nav-label { color: #b0c4de; }
+  .nav-item:hover .nav-icon  { color: #c2395e; }
+
+  /* ── Page display ── */
+  .page { display: none; }
+  .page.active { display: flex; flex-direction: column; }
+
+  /* ── Animations ── */
+  .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #c2395e; animation: pulse-anim 2s infinite; }
+  @keyframes pulse-anim { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+  .skeleton { background: linear-gradient(90deg, #1f1519 25%, #2a1c21 50%, #1f1519 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeUp 0.35s ease forwards; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  /* ── Cards ── */
+  .day-card { transition: transform 0.25s ease, border-color 0.25s ease !important; }
+  .day-card:hover { transform: translateY(-4px); border-color: rgba(194,57,94,0.45); }
+  .crop-card { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important; }
+  .crop-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--shadow); border-color: rgba(194,57,94,0.45); }
+
+  /* ── Upload zone ── */
+  .upload-zone { border: 2px dashed #2a1c21; }
+  .upload-zone:hover { border-color: rgba(194,57,94,0.5); background-color: rgba(194,57,94,0.03) !important; }
+
+  /* ── Chart bars ── */
+  .bar { width: 60%; background: linear-gradient(180deg, #c2395e 0%, #5a1a2e 100%); border-radius: 3px 3px 0 0; min-height: 4px; }
+  .bar:hover { background: linear-gradient(180deg, #e04a72 0%, #8b2246 100%); }
+
+  /* ── Form helpers ── */
+  input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 10; }
+  #inp-season option { background-color: #0d0a0b; color: #f0e8ea; }
+  #inp-season:focus  { border-color: rgba(194,57,94,0.6); }
+
+  /* ── Compact sidebar ── */
+  body.sidebar-compact aside { width: 4rem; }
+  body.sidebar-compact aside .nav-label,
+  body.sidebar-compact aside h1,
+  body.sidebar-compact aside .text-xs { display: none; }
+  body.sidebar-compact aside nav button { justify-content: center; padding-left: 0; padding-right: 0; }
+  body.sidebar-compact aside .px-5 { padding-left: 0; padding-right: 0; justify-content: center; }
+</style>
+</head>
+<body class="bg-bg-deep text-slate-100 overflow-hidden">
+<div class="flex h-screen w-full">
+
+  <!-- SIDEBAR -->
+  <aside class="w-60 flex-shrink-0 flex flex-col bg-bg-mid border-r border-surface-2 h-full">
+    <div class="px-5 py-6 border-b border-surface-2">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings:'FILL' 1">agriculture</span>
+        </div>
+        <div>
+          <h1 class="font-display text-white font-bold text-base leading-tight">AgriSense</h1>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 flex flex-col gap-1">
+      <button onclick="showPage('overview')" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-page="overview">
+        <span class="nav-icon material-symbols-outlined text-text-dim text-xl">dashboard</span>
+        <span class="nav-label text-sm font-medium" data-i18n="nav.overview">Overview</span>
+      </button>
+      <button onclick="showPage('weather')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-page="weather">
+        <span class="nav-icon material-symbols-outlined text-text-dim text-xl">thunderstorm</span>
+        <span class="nav-label text-sm font-medium" data-i18n="nav.weather">Weather</span>
+      </button>
+      <button onclick="showPage('soil')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-page="soil">
+        <span class="nav-icon material-symbols-outlined text-text-dim text-xl">landscape</span>
+        <span class="nav-label text-sm font-medium" data-i18n="nav.soil">Soil Monitoring</span>
+      </button>
+      <button onclick="showPage('crops')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-page="crops">
+        <span class="nav-icon material-symbols-outlined text-text-dim text-xl">eco</span>
+        <span class="nav-label text-sm font-medium" data-i18n="nav.crops">Crop Advisor</span>
+      </button>
+      <button onclick="showPage('disease')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-page="disease">
+        <span class="nav-icon material-symbols-outlined text-text-dim text-xl">document_scanner</span>
+        <span class="nav-label text-sm font-medium" data-i18n="nav.disease">Disease AI</span>
+      </button>
+      <button onclick="showPage('history')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-page="history">
+        <span class="nav-icon material-symbols-outlined text-text-dim text-xl">history</span>
+        <span class="nav-label text-sm font-medium" data-i18n="nav.history">History</span>
+      </button>
+      <button onclick="showPage('settings')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left" data-page="settings">
+        <span class="nav-icon material-symbols-outlined text-text-dim text-xl">settings</span>
+        <span class="nav-label text-sm font-medium" data-i18n="nav.settings">Settings</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 h-full overflow-hidden flex flex-col bg-bg-deep">
+    <header class="flex items-center justify-between px-8 py-4 bg-bg-mid/80 backdrop-blur border-b border-surface-2 flex-shrink-0">
+      <div>
+        <h2 id="page-title" class="text-xl font-display font-bold text-white" data-i18n="nav.overview">Overview</h2>
+        <p id="page-subtitle" class="text-text-dim text-xs font-mono mt-0.5" data-i18n="overview.subtitle"></p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center bg-surface rounded-lg px-3 py-2 border border-surface-2 gap-2 w-48">
+          <span class="material-symbols-outlined text-text-dim text-lg">search</span>
+          <input class="bg-transparent text-sm text-white placeholder-text-dim focus:outline-none w-full" placeholder="Search…" data-i18n-placeholder="common.search"/>
+        </div>
+        <button class="relative w-9 h-9 rounded-lg bg-surface border border-surface-2 flex items-center justify-center text-text-dim hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-lg">notifications</span>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+        </button>
+        <button onclick="toggleDarkLight()" id="theme-toggle-btn" title="Cycle: Dark → Light → Silver"
+          class="w-9 h-9 rounded-lg bg-surface border border-surface-2 flex items-center justify-center text-text-dim hover:text-primary transition-colors">
+          <span id="theme-toggle-icon" class="material-symbols-outlined text-lg">light_mode</span>
+        </button>
+        <button onclick="openCalendar()" class="w-15 h-9 rounded-lg bg-surface border border-surface-2 flex items-center justify-center text-text-dim hover:text-primary transition-colors" title="Farm Calendar" id="cal-btn-title">
+          <span class="material-symbols-outlined text-lg">calendar_today</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto">
+
+      {%- include 'sections/overview.html' %}
+      {%- include 'sections/weather.html' %}
+      {%- include 'sections/soil.html' %}
+      {%- include 'sections/crops.html' %}
+      {%- include 'sections/disease.html' %}
+      {%- include 'sections/history.html' %}
+      {%- include 'sections/settings.html' %}
+
+    </div>
+  </main>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

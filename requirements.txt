@@ -1,0 +1,94 @@
+# ============================================================
+# AgriSense — Python Dependencies
+# Smart Farm Intelligence Dashboard v1.0
+# ============================================================
+#
+# Install all dependencies:
+#   pip install -r requirements.txt
+#
+# IMPORTANT NOTES:
+#   1. Use Python 3.10 (64-bit) — TensorFlow does not support 32-bit Python
+#   2. TensorFlow and PyTorch are large (~2–4 GB total). Ensure stable internet.
+#   3. Install on a machine with at least 8 GB RAM (16 GB recommended).
+#   4. GPU is optional — all models run on CPU. For NVIDIA GPU support,
+#      replace torch/torchvision lines with the CUDA build (see note below).
+#
+# ============================================================
+
+
+# ── Web Framework ─────────────────────────────────────────────────────────────
+Flask>=2.3.0,<4.0.0
+Flask-Cors>=4.0.0
+Flask-SQLAlchemy>=3.0.0
+
+
+# ── Database ──────────────────────────────────────────────────────────────────
+# SQLite is bundled with Python — no extra install needed.
+# SQLAlchemy is installed as a Flask-SQLAlchemy dependency.
+SQLAlchemy>=2.0.0
+
+
+# ── HTTP Client (weather API + soil daemon communication) ─────────────────────
+requests>=2.28.0
+
+
+# ── Image Processing ──────────────────────────────────────────────────────────
+Pillow>=9.0.0
+
+
+# ── Numerical Computing ───────────────────────────────────────────────────────
+numpy>=1.23.0
+
+
+# ── Machine Learning — Crop Recommendation ───────────────────────────────────
+scikit-learn>=1.2.0
+
+
+# ── Deep Learning — Disease Detection (Keras/TensorFlow) ─────────────────────
+# Used for: Banana (LeNet + ResNet50 + InceptionV3), Mango (EfficientNetB7),
+#           Paddy (DenseNet121)
+#
+# TensorFlow 2.x includes Keras — do not install keras separately.
+# Compatible with Python 3.8–3.11.
+tensorflow>=2.12.0,<2.16.0
+
+
+# ── Deep Learning — Disease Detection (PyTorch) ──────────────────────────────
+# Used for: Coffee (CLIP ViT), Corn (ResNet18)
+#
+# CPU-only build (default — works on any machine):
+torch>=2.0.0
+torchvision>=0.15.0
+#
+# NVIDIA GPU build (faster inference — uncomment and replace lines above):
+# Install from: https://pytorch.org/get-started/locally/
+# Example for CUDA 11.8:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+
+# ── NLP / Vision-Language Model ──────────────────────────────────────────────
+# Used for: Coffee disease model (CLIP ViT processor)
+# HuggingFace Transformers loads CLIPProcessor for text prompt tokenisation.
+transformers>=4.30.0
+
+
+# ── Serial Communication — ESP32 USB Sensor (USB mode only) ──────────────────
+# Required only if SENSOR_MODE = "usb" in routes/soil.py
+# Not needed if using Wi-Fi mode (SENSOR_MODE = "wifi")
+pyserial>=3.5
+
+
+# ── Optional: Accelerated Inference ──────────────────────────────────────────
+# Uncomment to enable faster TensorFlow inference on supported hardware:
+# tensorflow-metal       # Apple Silicon (M1/M2/M3) GPU acceleration
+# tensorrt               # NVIDIA TensorRT optimisation
+
+
+# ============================================================
+# STDLIB MODULES (no install needed — bundled with Python 3.10)
+# ============================================================
+#   os, sys, io, json, re, logging, traceback, pickle,
+#   argparse, threading, time, socket, atexit, subprocess,
+#   importlib, pathlib, datetime, concurrent.futures,
+#   http.server, random
+# ============================================================

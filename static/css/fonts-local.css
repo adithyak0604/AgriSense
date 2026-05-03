@@ -1,0 +1,60 @@
+/*
+ * AgriSense — Local Font Fallback CSS
+ *
+ * When Google Fonts CDN is unavailable (offline mode), this provides
+ * system font fallbacks so the layout remains stable.
+ *
+ * Font roles:
+ *   Syne       → display/headings  → fallback: system-ui, Arial
+ *   Manrope    → body text         → fallback: system-ui, Arial
+ *   DM Mono    → monospace/code    → fallback: 'Courier New', monospace
+ *   Material Symbols → icons       → fallback: text shown as icon name (handled in CSS)
+ */
+
+/* ── System font stacks used as offline fallbacks ─────────────────────────── */
+:root {
+  --font-display:  "Syne", system-ui, -apple-system, Arial, sans-serif;
+  --font-body:     "Manrope", system-ui, -apple-system, Arial, sans-serif;
+  --font-mono:     "DM Mono", "Courier New", Courier, monospace;
+}
+
+/* ── Apply font variables throughout ─────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+}
+
+.font-display, h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
+.font-mono, code, pre, input[type="text"],
+input[type="number"], select, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ── Material Symbols offline handling ────────────────────────────────────── */
+/*
+  When Material Symbols font is unavailable, icon ligatures render as text.
+  These rules hide the text overflow and show a placeholder box instead,
+  keeping the layout stable.
+*/
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined", sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  /* Offline fallback: if font not loaded, clip to icon size */
+  overflow: hidden;
+  vertical-align: middle;
+  max-width: 1.5em;
+}

@@ -1,0 +1,279 @@
+      <!-- PAGE: DISEASE AI -->
+      <section id="page-disease" class="page fade-in p-8 gap-6">
+
+        <!-- Header row -->
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p class="text-text-dim text-xs font-mono uppercase tracking-wider">AI Disease Detection</p>
+            <p class="text-white text-sm mt-1">Select crop + upload a leaf image → runs disease model</p>
+          </div>
+          <div id="dis-status-bar" class="flex gap-2 flex-wrap"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+          <!-- LEFT: Upload + Controls (2 cols) -->
+          <div class="lg:col-span-2 flex flex-col gap-4">
+
+            <!-- Upload zone -->
+            <div class="bg-surface rounded-xl border border-surface-2 p-5 flex flex-col gap-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary">upload_file</span>
+                  <h3 class="font-display font-bold text-white" data-i18n="disease.upload_image">Upload Leaf Image</h3>
+                </div>
+                <button onclick="openCamera()"
+                  id="dis-camera-btn"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-2 border border-surface-3 text-text-dim hover:text-primary hover:border-primary/40 text-xs font-mono transition-all">
+                  <span class="material-symbols-outlined text-base">photo_camera</span>
+                  <span data-i18n="disease.use_camera">Use Camera</span>
+                </button>
+              </div>
+
+              <label id="dis-upload-zone"
+                class="upload-zone rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer relative bg-surface-2/40 min-h-[160px]">
+                <input type="file" id="dis-file-input" accept="image/*" onchange="onDiseaseFileSelected(event)"/>
+                <div id="dis-upload-placeholder" class="flex flex-col items-center gap-2 text-center">
+                  <div class="w-14 h-14 rounded-full bg-surface border border-surface-2 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-3xl">add_a_photo</span>
+                  </div>
+                  <p class="text-white text-sm font-medium" data-i18n="disease.drop_hint">Drop image or click to browse</p>
+                  <p class="text-text-dim text-xs">JPG, PNG · Leaf close-up recommended</p>
+                </div>
+                <img id="dis-preview" class="hidden w-full max-h-48 object-contain rounded-lg"/>
+              </label>
+
+              <!-- Crop selection — always visible, required -->
+              <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-text-dim text-xs font-mono uppercase tracking-wider">Select Crop <span class="text-red-400">*</span></span>
+                  <span id="dis-crop-hint" class="text-red-400 text-xs font-mono hidden">Required</span>
+                </div>
+                <select id="dis-crop-select"
+                  onchange="onCropSelected()"
+                  class="bg-surface-2 border border-surface-2 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/50 transition-colors">
+                  <option value="">— Choose a crop —</option>
+                  <option value="banana">🍌 Banana</option>
+                  <option value="coffee">☕ Coffee</option>
+                  <option value="corn">🌽 Corn</option>
+                  <option value="mango">🥭 Mango</option>
+                  <option value="paddy">🌾 Paddy</option>
+                </select>
+              </div>
+
+              <button onclick="runDiseaseAnalysis()"
+                id="dis-analyze-btn" disabled
+                class="w-full py-3 bg-surface-3 text-text-dim font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60">
+                <span class="material-symbols-outlined text-lg">biotech</span>
+                Analyse Disease
+              </button>
+              <p id="dis-btn-hint" class="text-text-dim text-xs font-mono text-center -mt-2" data-i18n="disease.upload_hint">Upload an image and select a crop to continue</p>
+            </div>
+
+            <!-- Model status panel -->
+            <div class="bg-surface rounded-xl border border-surface-2 p-5 flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-lg">memory</span>
+                <h3 class="font-display font-bold text-white text-sm" data-i18n="disease.loaded_models">Loaded Models</h3>
+              </div>
+              <div id="dis-model-list" class="flex flex-col gap-2">
+                <div class="text-text-dim text-xs font-mono" data-i18n="disease.loading_status">Loading model status…</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Results (3 cols) -->
+          <div class="lg:col-span-3 flex flex-col gap-4">
+
+            <!-- Empty state -->
+            <div id="dis-empty" class="bg-surface rounded-xl border border-surface-2 p-10 flex flex-col items-center justify-center gap-4 text-center flex-1 min-h-[300px]">
+              <div class="relative">
+                <div class="absolute inset-0 bg-primary/10 blur-2xl rounded-full"></div>
+                <div class="w-20 h-20 rounded-full bg-surface-2 border border-surface-2 flex items-center justify-center relative">
+                  <span class="material-symbols-outlined text-text-dim text-4xl">document_scanner</span>
+                </div>
+              </div>
+              <p class="text-white font-semibold" data-i18n="disease.no_analysis">No analysis yet</p>
+              <p class="text-text-dim text-sm max-w-xs">Upload a leaf photo and click Analyse Disease to get an instant AI diagnosis.</p>
+            </div>
+
+            <!-- Loading state -->
+            <div id="dis-loading" class="hidden bg-surface rounded-xl border border-surface-2 p-10 flex flex-col items-center gap-5">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <p id="dis-loading-msg" class="text-white font-medium text-sm" data-i18n="disease.classifying">Classifying crop…</p>
+                <p class="text-text-dim text-xs font-mono" data-i18n="disease.stage1">Stage 1 of 2</p>
+              </div>
+              <!-- Pipeline stages -->
+              <div class="flex items-center gap-2 text-xs font-mono">
+                <div id="dis-stage-1" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/15 text-primary border border-primary/30">
+                  <span class="material-symbols-outlined text-sm">search</span> Crop Detection
+                </div>
+                <span class="text-text-dim">→</span>
+                <div id="dis-stage-2" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-2 text-text-dim border border-surface-2">
+                  <span class="material-symbols-outlined text-sm">biotech</span> Disease Analysis
+                </div>
+              </div>
+            </div>
+
+            <!-- Result card -->
+            <div id="dis-result" class="hidden flex flex-col gap-4">
+
+              <!-- Crop detected banner -->
+              <div class="bg-surface rounded-xl border border-surface-2 p-5 flex items-center gap-4">
+                <div id="dis-crop-icon-wrap" class="w-12 h-12 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-2xl flex-shrink-0">🌿</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span id="dis-crop-name" class="text-white font-display font-bold text-lg capitalize"></span>
+                    <span id="dis-crop-badge" class="px-2 py-0.5 text-xs rounded-full font-mono bg-primary/15 text-primary border border-primary/20"></span>
+                  </div>
+                  <p class="text-text-dim text-xs font-mono mt-0.5">
+                    Stage 1 complete — running <span id="dis-crop-model-name" class="text-white"></span> disease model
+                  </p>
+                </div>
+                <button onclick="resetDiseaseAnalysis()"
+                  class="text-text-dim hover:text-white text-xs font-mono flex items-center gap-1 hover:bg-surface-2 px-2 py-1 rounded-lg transition-colors">
+                  <span class="material-symbols-outlined text-sm">refresh</span> New
+                </button>
+              </div>
+
+              <!-- Primary diagnosis -->
+              <div id="dis-primary" class="bg-surface rounded-xl border-2 p-6 flex flex-col gap-4">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="text-text-dim text-xs uppercase tracking-wider font-mono" data-i18n="disease.primary_diagnosis">Primary Diagnosis</p>
+                    <p id="dis-disease-name" class="text-white font-display font-bold text-2xl mt-1"></p>
+                    <div class="flex items-center gap-2 mt-2">
+                      <div id="dis-severity-dot" class="w-2.5 h-2.5 rounded-full"></div>
+                      <span id="dis-severity-label" class="text-sm font-mono capitalize"></span>
+                    </div>
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    <p class="text-text-dim text-xs font-mono" data-i18n="disease.confidence">Confidence</p>
+                    <p id="dis-confidence" class="text-white font-display font-bold text-4xl mt-1"></p>
+                    <div id="dis-conf-bar-wrap" class="w-24 h-2 bg-surface-2 rounded-full mt-2 ml-auto">
+                      <div id="dis-conf-bar" class="h-full rounded-full bg-primary transition-all"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Recommended action -->
+                <div class="bg-surface-2 rounded-lg p-4 flex gap-3">
+                  <span class="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">recommend</span>
+                  <div>
+                    <p class="text-text-dim text-xs font-mono uppercase mb-1" data-i18n="disease.recommended_action">Recommended Action</p>
+                    <p id="dis-action" class="text-white text-sm leading-relaxed"></p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Top-3 predictions breakdown -->
+              <div class="bg-surface rounded-xl border border-surface-2 p-5">
+                <p class="text-text-dim text-xs uppercase tracking-wider font-mono mb-3" data-i18n="disease.all_predictions">All Predictions</p>
+                <div id="dis-predictions" class="flex flex-col gap-2"></div>
+              </div>
+
+            </div>
+
+            <!-- Error state -->
+            <div id="dis-error" class="hidden rounded-xl p-5 flex flex-col gap-3 border">
+              <div class="flex items-center gap-3">
+                <div id="dis-error-icon-wrap" class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-red-500/10 border border-red-500/20">
+                  <span id="dis-error-icon" class="material-symbols-outlined text-red-400">error</span>
+                </div>
+                <div>
+                  <p id="dis-error-title" class="text-white font-semibold text-sm" data-i18n="disease.analysis_failed">Analysis Failed</p>
+                  <p id="dis-error-msg" class="text-red-300 text-xs font-mono mt-0.5 leading-relaxed"></p>
+                </div>
+              </div>
+              <p id="dis-error-hint" class="hidden text-text-dim text-xs font-mono bg-surface-2 rounded-lg px-3 py-2 border border-surface-3"></p>
+              <button onclick="resetDiseaseAnalysis()"
+                class="self-start px-4 py-2 bg-surface-2 hover:bg-surface-3 text-white text-xs rounded-lg transition-colors font-mono flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">refresh</span>
+                <span data-i18n="disease.try_again">Try Again</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Scan history -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">history</span>
+              <h3 class="font-display font-bold text-white" data-i18n="disease.recent_scans">Recent Scans</h3>
+            </div>
+            <button onclick="clearDiseaseHistory()" class="text-text-dim text-xs hover:text-red-400 transition-colors font-mono flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">delete</span> Clear
+            </button>
+          </div>
+          <div id="dis-history" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div class="bg-surface rounded-xl border border-surface-2 p-4 flex flex-col items-center gap-2 text-center">
+              <span class="material-symbols-outlined text-text-dim text-3xl">hourglass_empty</span>
+              <p class="text-text-dim text-xs font-mono" data-i18n="disease.no_scans">No scans yet</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Camera Modal ─────────────────────────────────────────────────────── -->
+  <div id="camera-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4"
+    style="background:rgba(0,0,0,0.85); backdrop-filter:blur(6px);">
+    <div class="bg-surface border border-surface-2 rounded-2xl overflow-hidden w-full max-w-lg flex flex-col shadow-2xl">
+
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-surface-2">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">photo_camera</span>
+          <h3 class="font-display font-bold text-white" data-i18n="disease.camera_title">Live Camera</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Flip camera (mobile) -->
+          <button id="camera-flip-btn" onclick="flipCamera()"
+            class="w-8 h-8 rounded-lg bg-surface-2 border border-surface-3 flex items-center justify-center text-text-dim hover:text-primary transition-colors"
+            title="Flip camera">
+            <span class="material-symbols-outlined text-base">flip_camera_android</span>
+          </button>
+          <button onclick="closeCamera()"
+            class="w-8 h-8 rounded-lg bg-surface-2 border border-surface-3 flex items-center justify-center text-text-dim hover:text-red-400 transition-colors">
+            <span class="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Video feed -->
+      <div class="relative bg-black">
+        <video id="camera-video" autoplay playsinline muted
+          class="w-full max-h-[360px] object-cover"></video>
+        <!-- Leaf framing guide overlay -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-48 h-48 rounded-2xl border-2 border-primary/60 border-dashed flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary/40 text-4xl">eco</span>
+          </div>
+        </div>
+        <!-- Flash overlay for capture effect -->
+        <div id="camera-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-100"></div>
+        <!-- Error state -->
+        <div id="camera-error" class="hidden absolute inset-0 flex flex-col items-center justify-center gap-3 bg-bg-deep">
+          <span class="material-symbols-outlined text-red-400 text-4xl">videocam_off</span>
+          <p id="camera-error-msg" class="text-text-dim text-sm text-center px-6" data-i18n="disease.camera_error">Camera not available</p>
+        </div>
+      </div>
+
+      <!-- Canvas (hidden, used to grab frame) -->
+      <canvas id="camera-canvas" class="hidden"></canvas>
+
+      <!-- Footer actions -->
+      <div class="flex items-center justify-between px-5 py-4 border-t border-surface-2 bg-surface-2/40">
+        <p class="text-text-dim text-xs font-mono" data-i18n="disease.camera_hint">Centre the leaf in the guide box</p>
+        <button onclick="capturePhoto()" id="camera-capture-btn"
+          class="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dim text-bg-deep font-bold text-sm rounded-xl transition-all">
+          <span class="material-symbols-outlined text-lg">camera</span>
+          <span data-i18n="disease.capture">Capture</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</section>

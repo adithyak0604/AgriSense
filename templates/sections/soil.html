@@ -1,0 +1,249 @@
+<!-- PAGE: SOIL MONITORING -->
+<section id="page-soil" class="page fade-in p-8 gap-6">
+
+  <!-- Header row -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <p class="text-text-dim text-xs font-mono uppercase tracking-wider">7-in-1 Soil Sensor · RS485 Modbus</p>
+      <p class="text-white text-sm mt-1" id="soil-mode-subtitle" data-i18n="soil.subtitle">Live readings from ESP32 via USB serial</p>
+              <span id="soil-mode-badge" class="text-xs font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/25">USB</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Connection status -->
+      <div id="soil-status-badge"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-surface-2 text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-surface-3"></span>
+        <span id="soil-status-text" class="text-text-dim" data-i18n="soil.waiting">Waiting for data…</span>
+      </div>
+      <!-- Last updated -->
+      <span id="soil-last-updated" class="text-text-dim text-xs font-mono hidden"></span>
+      <!-- Read Sensor button -->
+      <button onclick="readSensorNow()" id="soil-read-btn"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-bg-deep text-sm font-mono font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20">
+        <span class="material-symbols-outlined text-base">sensors</span>Read Sensor
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Top row: pH · Moisture · Temperature · Conductivity ── -->
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+
+    <!-- pH -->
+    <div class="bg-surface rounded-xl border border-surface-2 p-5 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-white font-display font-bold text-sm">pH Level</h3>
+          <p class="text-text-dim text-xs" data-i18n="soil.ph_desc">Acidity / Alkalinity</p>
+        </div>
+        <span class="material-symbols-outlined text-primary text-lg">science</span>
+      </div>
+      <!-- pH bar -->
+      <div class="relative my-4" style="height:52px">
+        <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 rounded-full"
+          style="background:linear-gradient(to right,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#8b5cf6)"></div>
+        <div id="soil-ph-marker" class="absolute top-0 flex flex-col items-center transition-all duration-700" style="left:50%;transform:translateX(-50%)">
+          <div id="soil-ph-badge" class="bg-white text-bg-deep font-bold text-xs px-1.5 py-0.5 rounded font-mono shadow-md mb-0.5">--</div>
+          <div class="w-0.5 h-8 bg-white rounded-full shadow"></div>
+        </div>
+        <div class="absolute inset-x-0 flex justify-between text-xs text-text-dim font-mono px-0.5" style="top:calc(50% + 10px)">
+          <span>0</span><span>4</span><span>7</span><span>10</span><span>14</span>
+        </div>
+      </div>
+      <div class="flex items-end justify-between mt-2">
+        <span id="soil-ph-val" class="text-3xl font-display font-bold text-white">--</span>
+        <span id="soil-ph-status" class="text-xs font-mono px-2 py-0.5 rounded-full bg-surface-2 text-text-dim">--</span>
+      </div>
+      <p class="text-text-dim text-xs mt-1 font-mono" data-i18n="soil.optimal_ph">Optimal: 5.5 – 7.5</p>
+    </div>
+
+    <!-- Moisture -->
+    <div class="bg-surface rounded-xl border border-surface-2 p-5 relative overflow-hidden">
+      <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-white font-display font-bold text-sm" data-i18n="overview.moisture">Moisture</h3>
+          <p class="text-text-dim text-xs" data-i18n="soil.moisture_desc">Volumetric Water Content</p>
+        </div>
+        <span class="material-symbols-outlined text-blue-400 text-lg">water_drop</span>
+      </div>
+      <div class="flex items-center justify-center my-2">
+        <div class="relative w-28 h-28">
+          <svg class="w-full h-full" viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+            <circle cx="50" cy="50" r="40" fill="none" stroke-width="9" class="stroke-surface-3"/>
+            <circle id="soil-moist-ring" cx="50" cy="50" r="40" fill="none" stroke="#3b82f6"
+              stroke-width="9" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2"
+              style="transition:stroke-dashoffset 0.8s ease"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span id="soil-moist-val" class="text-2xl font-display font-bold text-white">--</span>
+            <span class="text-text-dim text-xs">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-between">
+        <span id="soil-moist-status" class="text-xs font-mono px-2 py-0.5 rounded-full bg-surface-2 text-text-dim">--</span>
+        <span class="text-text-dim text-xs font-mono" data-i18n="soil.optimal_moisture">Optimal: 20–80%</span>
+      </div>
+    </div>
+
+    <!-- Soil Temperature -->
+    <div class="bg-surface rounded-xl border border-surface-2 p-5 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-white font-display font-bold text-sm" data-i18n="overview.soil_temp">Soil Temp</h3>
+          <p class="text-text-dim text-xs" data-i18n="soil.temp_desc">At sensor depth</p>
+        </div>
+        <span class="material-symbols-outlined text-orange-400 text-lg">thermostat</span>
+      </div>
+      <div class="flex items-baseline justify-center gap-1 my-6">
+        <span id="soil-temp-val" class="text-5xl font-display font-bold text-white">--</span>
+        <span class="text-xl text-text-dim">°C</span>
+      </div>
+      <div class="flex justify-between mt-1">
+        <span id="soil-temp-status" class="text-xs font-mono px-2 py-0.5 rounded-full bg-surface-2 text-text-dim">--</span>
+        <span class="text-text-dim text-xs font-mono" data-i18n="soil.optimal_temp">Optimal: 10–35°C</span>
+      </div>
+    </div>
+
+    <!-- Conductivity -->
+    <div class="bg-surface rounded-xl border border-surface-2 p-5 relative overflow-hidden">
+      <div class="absolute bottom-0 right-0 w-24 h-24 bg-yellow-500/5 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-white font-display font-bold text-sm" data-i18n="overview.conductivity">Conductivity</h3>
+          <p class="text-text-dim text-xs" data-i18n="soil.conductivity">Electrical Conductivity</p>
+        </div>
+        <span class="material-symbols-outlined text-yellow-400 text-lg">electric_bolt</span>
+      </div>
+      <div class="flex items-baseline justify-center gap-1 my-4">
+        <span id="soil-cond-val" class="text-4xl font-display font-bold text-white">--</span>
+        <span class="text-sm text-text-dim">µS/cm</span>
+      </div>
+      <!-- Conductivity bar -->
+      <div class="h-2 w-full bg-surface-2 rounded-full overflow-hidden mt-2">
+        <div id="soil-cond-bar" class="h-full bg-yellow-400 rounded-full transition-all duration-700" style="width:0%"></div>
+      </div>
+      <div class="flex justify-between mt-1">
+        <span id="soil-cond-status" class="text-xs font-mono px-2 py-0.5 rounded-full bg-surface-2 text-text-dim">--</span>
+        <span class="text-text-dim text-xs font-mono" data-i18n="soil.optimal_ec">Optimal: 100–2000</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NPK Row ── -->
+  <div class="bg-surface rounded-xl border border-surface-2 p-6">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="text-white font-display font-bold flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">compost</span>Nutrient Levels (NPK)
+        </h3>
+        <p class="text-text-dim text-xs mt-0.5">Macro-nutrient concentrations in mg/kg</p>
+      </div>
+      <button onclick="showPage('crops')"
+        class="text-primary text-xs font-mono hover:underline" data-i18n="soil.view_crops">View Crop Recommendations →</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Nitrogen -->
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center font-bold text-sm border border-blue-500/25 font-mono">N</span>
+            <span class="text-white font-medium text-sm" data-i18n="soil.nitrogen">Nitrogen</span>
+          </div>
+          <div class="text-right">
+            <span id="soil-n-val" class="text-white font-mono font-bold">--</span>
+            <span class="text-text-dim text-xs font-mono"> mg/kg</span>
+          </div>
+        </div>
+        <div class="h-2.5 w-full bg-surface-2 rounded-full overflow-hidden">
+          <div id="soil-n-bar" class="h-full bg-blue-400 rounded-full transition-all duration-700" style="width:0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-text-dim font-mono">
+          <span>0</span><span id="soil-n-status" class="text-blue-400">--</span><span>300+</span>
+        </div>
+      </div>
+
+      <!-- Phosphorus -->
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-lg bg-orange-500/15 text-orange-400 flex items-center justify-center font-bold text-sm border border-orange-500/25 font-mono">P</span>
+            <span class="text-white font-medium text-sm" data-i18n="soil.phosphorus">Phosphorus</span>
+          </div>
+          <div class="text-right">
+            <span id="soil-p-val" class="text-white font-mono font-bold">--</span>
+            <span class="text-text-dim text-xs font-mono"> mg/kg</span>
+          </div>
+        </div>
+        <div class="h-2.5 w-full bg-surface-2 rounded-full overflow-hidden">
+          <div id="soil-p-bar" class="h-full bg-orange-400 rounded-full transition-all duration-700" style="width:0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-text-dim font-mono">
+          <span>0</span><span id="soil-p-status" class="text-orange-400">--</span><span>200+</span>
+        </div>
+      </div>
+
+      <!-- Potassium -->
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold text-sm border border-purple-500/25 font-mono">K</span>
+            <span class="text-white font-medium text-sm" data-i18n="soil.potassium">Potassium</span>
+          </div>
+          <div class="text-right">
+            <span id="soil-k-val" class="text-white font-mono font-bold">--</span>
+            <span class="text-text-dim text-xs font-mono"> mg/kg</span>
+          </div>
+        </div>
+        <div class="h-2.5 w-full bg-surface-2 rounded-full overflow-hidden">
+          <div id="soil-k-bar" class="h-full bg-purple-400 rounded-full transition-all duration-700" style="width:0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-text-dim font-mono">
+          <span>0</span><span id="soil-k-status" class="text-purple-400">--</span><span>400+</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── History trend chart ── -->
+  <div class="bg-surface rounded-xl border border-surface-2 p-6">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <h3 class="text-white font-display font-bold flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">ssid_chart</span>Reading History
+      </h3>
+      <div class="flex items-center gap-3">
+        <div class="flex bg-surface-2 rounded-lg p-1 gap-1">
+          <button onclick="setSoilChartParam('moisture')"  id="soil-chart-btn-moisture"  class="soil-chart-btn px-3 py-1 text-xs font-mono rounded bg-primary/15 text-primary" data-i18n="overview.moisture">Moisture</button>
+          <button onclick="setSoilChartParam('ph')"        id="soil-chart-btn-ph"        class="soil-chart-btn px-3 py-1 text-xs font-mono rounded text-text-dim hover:text-white transition-colors">pH</button>
+          <button onclick="setSoilChartParam('temperature')" id="soil-chart-btn-temperature" class="soil-chart-btn px-3 py-1 text-xs font-mono rounded text-text-dim hover:text-white transition-colors">Temp</button>
+          <button onclick="setSoilChartParam('nitrogen')"  id="soil-chart-btn-nitrogen"  class="soil-chart-btn px-3 py-1 text-xs font-mono rounded text-text-dim hover:text-white transition-colors">N</button>
+          <button onclick="setSoilChartParam('phosphorus')" id="soil-chart-btn-phosphorus" class="soil-chart-btn px-3 py-1 text-xs font-mono rounded text-text-dim hover:text-white transition-colors">P</button>
+          <button onclick="setSoilChartParam('potassium')" id="soil-chart-btn-potassium" class="soil-chart-btn px-3 py-1 text-xs font-mono rounded text-text-dim hover:text-white transition-colors">K</button>
+        </div>
+        <button onclick="clearSoilHistory()"
+          class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface border border-surface-2 text-text-dim text-xs font-mono hover:text-red-400 hover:border-red-400/40 transition-all">
+          <span class="material-symbols-outlined text-sm">delete_sweep</span>Clear
+        </button>
+      </div>
+    </div>
+    <!-- Chart bars -->
+    <div id="soil-chart" class="flex items-end gap-1 h-32 mt-2">
+      <div class="flex-1 flex items-center justify-center text-text-dim text-xs font-mono" data-i18n="soil.no_history">No history yet</div>
+    </div>
+    <div id="soil-chart-labels" class="flex gap-1 mt-1"></div>
+  </div>
+
+  <!-- No sensor notice -->
+  <div id="soil-no-data" class="bg-surface rounded-xl border border-surface-2 p-8 text-center hidden">
+    <span class="material-symbols-outlined text-text-dim text-4xl mb-3 block">sensors_off</span>
+    <p class="text-white font-medium mb-1" data-i18n="soil.no_data">No sensor data received yet</p>
+    <p class="text-text-dim text-sm">Start <span class="font-mono text-primary">serial_reader.py</span> with your ESP32 connected via USB</p>
+    <code class="block mt-3 text-xs font-mono bg-surface-2 rounded-lg px-4 py-2 text-text-dim inline-block">
+      python serial_reader.py --port /dev/ttyUSB0
+    </code>
+  </div>
+
+</section>

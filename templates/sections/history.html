@@ -1,0 +1,151 @@
+<!-- PAGE: HISTORY -->
+<section id="page-history" class="page fade-in p-8 gap-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <p class="text-text-dim text-xs font-mono uppercase tracking-wider" data-i18n="history.title">Database Records</p>
+      <p class="text-white text-sm mt-1" data-i18n="history.subtitle"></p>
+    </div>
+    <div id="hist-summary" class="flex gap-3 flex-wrap"></div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="flex gap-1 bg-surface rounded-xl p-1 w-fit">
+    <button onclick="histTab('weather')" id="hist-tab-weather"
+      class="hist-tab px-4 py-2 rounded-lg text-sm font-medium transition-all text-text-dim hover:text-white">
+      <span class="material-symbols-outlined text-base align-middle mr-1">partly_cloudy_day</span><span data-i18n="history.tab_weather">Weather</span>
+    </button>
+    <button onclick="histTab('soil')" id="hist-tab-soil"
+      class="hist-tab px-4 py-2 rounded-lg text-sm font-medium transition-all text-text-dim hover:text-white">
+      <span class="material-symbols-outlined text-base align-middle mr-1">landscape</span><span data-i18n="history.tab_soil">Soil Readings</span>
+    </button>
+    <button onclick="histTab('crop')" id="hist-tab-crop"
+      class="hist-tab px-4 py-2 rounded-lg text-sm font-medium transition-all text-text-dim hover:text-white">
+      <span class="material-symbols-outlined text-base align-middle mr-1">agriculture</span><span data-i18n="history.tab_crop">Crop Advisor</span>
+    </button>
+    <button onclick="histTab('disease')" id="hist-tab-disease"
+      class="hist-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-surface-2 text-white">
+      <span class="material-symbols-outlined text-base align-middle mr-1">biotech</span><span data-i18n="history.tab_disease">Disease</span>
+    </button>
+    <button onclick="histTab('alerts')" id="hist-tab-alerts"
+      class="hist-tab px-4 py-2 rounded-lg text-sm font-medium transition-all text-text-dim hover:text-white">
+      <span class="material-symbols-outlined text-base align-middle mr-1">notifications</span><span data-i18n="history.tab_alerts">Alerts</span>
+      <span id="hist-alert-badge" class="hidden ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full font-mono"></span>
+    </button>
+  </div>
+
+  <!-- Disease panel -->
+  <div id="hist-panel-disease">
+    <div class="flex gap-3 flex-wrap mb-4">
+      <select id="hist-crop-filter" onchange="loadDiseaseHistory()"
+        class="bg-surface border border-surface-2 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary/50">
+        <option value="" data-i18n="history.filter_all_crops">All crops</option>
+        <option value="banana">🍌 Banana</option>
+        <option value="coffee">☕ Coffee</option>
+        <option value="corn">🌽 Corn</option>
+        <option value="mango">🥭 Mango</option>
+        <option value="paddy">🌾 Paddy</option>
+      </select>
+      <select id="hist-limit" onchange="loadDiseaseHistory()"
+        class="bg-surface border border-surface-2 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary/50">
+        <option value="20" data-i18n="history.last_20">Last 20</option>
+        <option value="50" selected data-i18n="history.last_50">Last 50</option>
+        <option value="100" data-i18n="history.last_100">Last 100</option>
+      </select>
+    </div>
+    <div id="hist-disease-table" class="bg-surface rounded-xl border border-surface-2 overflow-hidden">
+      <div class="p-8 text-center text-text-dim text-sm font-mono" data-i18n="common.loading">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Weather panel -->
+  <div id="hist-panel-weather" class="hidden">
+    <div class="flex justify-end mb-4">
+      <button onclick="clearWeatherLog()"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface border border-surface-2 text-text-dim text-xs font-mono hover:text-red-400 hover:border-red-400/40 transition-all">
+        <span class="material-symbols-outlined text-base">delete_sweep</span>
+        <span data-i18n="history.clear_weather">Clear all weather logs</span>
+      </button>
+    </div>
+    <div id="hist-weather-table" class="bg-surface rounded-xl border border-surface-2 overflow-hidden">
+      <div class="p-8 text-center text-text-dim text-sm font-mono">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Alerts panel -->
+  <div id="hist-panel-alerts" class="hidden">
+    <div class="flex gap-3 mb-4">
+      <select id="hist-alert-filter" onchange="loadAlerts()"
+        class="bg-surface border border-surface-2 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary/50">
+        <option value="" data-i18n="history.filter_all_alerts">All alerts</option>
+        <option value="false" data-i18n="history.unresolved_only">Unresolved only</option>
+        <option value="true" data-i18n="history.resolved_only">Resolved only</option>
+      </select>
+    </div>
+    <div id="hist-alerts-list" class="flex flex-col gap-3">
+      <div class="p-8 text-center text-text-dim text-sm font-mono">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Crop Recommendations panel -->
+  <div id="hist-panel-crop" class="hidden">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div class="flex gap-3 flex-wrap">
+        <select id="hist-crop-season-filter" onchange="loadCropHistory()"
+          class="bg-surface border border-surface-2 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary/50">
+          <option value="" data-i18n="history.filter_all_seasons">All seasons</option>
+          <option value="rainy">🌧️ Rainy</option>
+          <option value="summer">☀️ Summer</option>
+          <option value="winter">❄️ Winter</option>
+          <option value="spring">🌸 Spring</option>
+          <option value="autumn">🍂 Autumn</option>
+          <option value="zaid">🌾 Zaid</option>
+        </select>
+        <select id="hist-crop-source-filter" onchange="loadCropHistory()"
+          class="bg-surface border border-surface-2 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary/50">
+          <option value="" data-i18n="history.filter_all_sources">All sources</option>
+          <option value="sensor" data-i18n="history.source_sensor">From Sensor</option>
+          <option value="manual" data-i18n="history.source_manual">Manual Input</option>
+        </select>
+        <select id="hist-crop-limit" onchange="loadCropHistory()"
+          class="bg-surface border border-surface-2 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary/50">
+          <option value="20" data-i18n="history.last_20">Last 20</option>
+          <option value="50" selected data-i18n="history.last_50">Last 50</option>
+          <option value="100" data-i18n="history.last_100">Last 100</option>
+        </select>
+      </div>
+      <button onclick="clearCropHistory()"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface border border-surface-2 text-text-dim text-xs font-mono hover:text-red-400 hover:border-red-400/40 transition-all">
+        <span class="material-symbols-outlined text-base">delete_sweep</span>
+        <span data-i18n="history.clear_crop">Clear all</span>
+      </button>
+    </div>
+    <div id="hist-crop-table" class="bg-surface rounded-xl border border-surface-2 overflow-hidden">
+      <div class="p-8 text-center text-text-dim text-sm font-mono" data-i18n="common.loading">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Soil Readings panel -->
+  <div id="hist-panel-soil" class="hidden">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div class="flex gap-3 flex-wrap">
+        <select id="hist-soil-limit" onchange="loadSoilHistoryLog()"
+          class="bg-surface border border-surface-2 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary/50">
+          <option value="20"  data-i18n="history.last_20">Last 20</option>
+          <option value="50" selected data-i18n="history.last_50">Last 50</option>
+          <option value="100" data-i18n="history.last_100">Last 100</option>
+        </select>
+      </div>
+      <button onclick="clearSoilHistoryLog()"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface border border-surface-2 text-text-dim text-xs font-mono hover:text-red-400 hover:border-red-400/40 transition-all">
+        <span class="material-symbols-outlined text-base">delete_sweep</span>
+        <span data-i18n="history.clear_soil">Clear all</span>
+      </button>
+    </div>
+    <div id="hist-soil-table" class="bg-surface rounded-xl border border-surface-2 overflow-hidden">
+      <div class="p-8 text-center text-text-dim text-sm font-mono" data-i18n="common.loading">Loading…</div>
+    </div>
+  </div>
+
+</section>
