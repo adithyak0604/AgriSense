@@ -1,212 +1,233 @@
-# AgriSense — Complete Project Summary
+# CLAUDE.md
 
-## What Was Built
-**AgriSense** is a Smart Farm Intelligence Dashboard — a locally-hosted Flask web application that integrates IoT soil sensing, AI disease detection, crop recommendation, and weather intelligence into one unified multilingual dashboard.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
----
+## Quick Start
 
-## Architecture
-- **Backend:** Python 3.10, Flask Blueprint architecture, SQLite via SQLAlchemy
-- **Frontend:** Single-page app — HTML5, Tailwind CSS, Vanilla JavaScript (app.js ~3500+ lines)
-- **Hardware:** ESP32 DevKit v1 + 7-in-1 RS485 Soil Sensor + MAX RS485 Module
-- **Deployment:** Local-first, offline-capable, runs on `localhost:5000`
+```bash
+pip install -r requirements.txt     # ~2-4GB download, requires 8GB RAM minimum
+python app.py                       # Starts Flask on http://localhost:5000 + serial daemon
+```
 
----
+**Important context:**
+- Flask runs with `debug=True`, so hot reload is enabled — changes to `routes/` or `app.py` restart the server automatically
+- If `SENSOR_MODE = "usb"` in `routes/soil.py`, a serial daemon subprocess is spawned automatically (connects to ESP32 on configured port)
+- Database auto-creates at `instance/agrisense.db` on first run
 
-## Five Core Subsystems
+**Manual serial port testing (if needed):**
+```bash
+python serial_reader.py --list                           # List available COM ports
+python serial_reader.py --port COM5 --baud 9600         # Windows
+python serial_reader.py --port /dev/ttyUSB0 --baud 9600 # Linux
+```
 
-### 1. Soil Monitoring
-- ESP32 reads pH, moisture, temperature, N, P, K, conductivity via RS485 Modbus
-- `serial_reader.py` daemon bridges USB serial to Flask via HTTP on port 5001
-- Two-thread architecture — serial thread + HTTP server thread
-- Window-accumulation parser collects all 7 values before storing
-- Manual Read Sensor button on dashboard — on-demand, not auto-poll
-- Supports both **USB mode** (serial daemon) and **Wi-Fi mode** (ESP32 HTTP push to `/api/soil/ingest` with token authentication)
-- `SENSOR_MODE = "usb"` currently active in `routes/soil.py`
+## Architecture Overview
+Agrisense is a **3-layer full-stack application**:
 
-### 2. Plant Disease Detection
-- Five crops, five different architectures:
-  - **Banana** — Keras soft-voting ensemble (LeNet + ResNet50 + InceptionV3), 128×128, 7 classes
-  - **Coffee** — PyTorch CLIP ViT (HuggingFace), text-prompt scoring, 5 classes
-  - **Corn** — PyTorch ResNet18, ImageNet normalisation, 256×256, 4 classes
-  - **Mango** — Keras EfficientNetB7 with L1/L2 regularisation, 224×224, 8 classes
-  - **Paddy** — Keras DenseNet121, 256×256, 10 classes
-- All models lazy-loaded and cached in memory
-- Keras 2→3 compatibility patches implemented
-- **Pre-inference image validation** (`validate_image()`):
-  - Resolution check (min 80×80)
-  - Brightness (20–240)
-  - Blur via Laplacian variance (threshold **35** — lowered from 80 after moderate photos were wrongly rejected)
-  - Plant colour profile (5 signals: green, yellow, brown, dark-green, red-tinted)
-  - Returns HTTP 422 with reason code and actionable hint per rejection type
-- **Camera capture** via `getUserMedia` API — live modal with leaf framing guide, flash effect, flip camera button
-- Error state fully reset when switching from camera back to file upload (bug fix applied)
+### Layer 1: Backend (Flask Microservices)
+Located in `routes/`, implemented as Flask blueprints:
+- **soil.py** — Soil sensor API (reads from USB serial daemon or accepts Wi-Fi POST from ESP32)
+- **weather.py** — Dual-source weather (OpenWeatherMap + WeatherAPI, parallel fetching, merged response)
+- **disease.py** — Per-crop disease detection inference pipeline (5 crops with independent ML models)
+- **crop.py** — Crop recommendation engine using scikit-learn Logistic Regression
+- **history.py** — History/analytics (queryable logs for disease, weather, crops, alerts)
 
-### 3. Crop Recommendation
-- scikit-learn Logistic Regression — 3 pkl files: `crop_recommendation_model.pkl`, `season_encoder.pkl`, `scaler.pkl`
-- Located in `Rec_Models/` — must match `SENSOR_MODE` in `routes/crop.py`
-- 8 inputs: N, P, K, Temperature, Humidity, pH, Rainfall, Season
-- **Fill from Sensor** button auto-populates 6 fields from latest soil reading
-- `from_sensor` flag stored in DB to distinguish sensor vs manual input
-- Returns top-3 crops with agronomic reason, growing tips, parameter compatibility chart
-- All recommendations saved to `crop_recommendations` table
-- Known issue: `_pickle.UnpicklingError: invalid load key, 'v'` — pkl files are corrupted/wrong format. Fix: re-export from training notebook using `pickle.dump()` or switch loader to `joblib.load()`
+Routes auto-register via blueprint pattern, no explicit routing config needed.
 
-### 4. Weather Intelligence
-- Dual-source: OpenWeatherMap (forecast + AQI) + WeatherAPI (real-time conditions)
-- Concurrent fetch, priority merge — OWM leads on forecast, WeatherAPI on current
-- **3-day forecast** (changed from 5-day after API trial ended)
-- `grid-cols-3` in both Overview and Weather HTML
-- Automated farm alerts: Extreme UV (>10), High UV (8–10), Rain probability (>70%), Frost risk (<4°C), High humidity (>85%)
-- Location via GPS geolocation or manual city search with autocomplete
+### Layer 2: Frontend (Single-Page App)
+- **base.html** — Main HTML shell with sidebar navigation (7 dashboard pages)
+- **app.js** (3,134 lines) — Unified JavaScript engine handling:
+  - Page routing (`showPage()` function, no backend templating)
+  - API calls to Flask backend
+  - State management (cached weather, polling soil data)
+  - Image upload + disease detection workflow
+  - Crop recommendation UI
+  - i18n translation system (`t()` function)
+- **translations/** — JSON-based i18n (en.json, ml.json, hi.json, 347 keys each)
+- **css/** — Tailwind CSS (minified locally) + Material Icons
 
-### 5. History & Analytics
-- **5 tabs** on the History page:
-  1. Disease detections
-  2. Weather logs
-  3. Alerts
-  4. Crop Advisor
-  5. Soil Readings ← added in last session
-- Summary strip shows counts for all 5 categories
-- `/api/history/soil` + delete + clear endpoints added to `history.py`
-- `SoilReading` imported into `history.py`
+### Layer 3: Database (SQLAlchemy ORM + SQLite)
+Auto-created `instance/agrisense.db` with 5 tables:
+- `disease_history` — Plant disease detections (crop, confidence, severity, image URL)
+- `weather_log` — Historical weather data from both APIs
+- `alerts_log` — Weather + disease alerts (threshold-triggered, soft-deleted when resolved)
+- `soil_readings` — NPK, pH, moisture, temperature, conductivity (tagged by timestamp, sensor mode)
+- `crop_recommendations` — Recommended crops with input parameters
 
----
+### Hardware Layer
+- **USB mode** (default): Serial daemon (`serial_reader.py`) runs as separate subprocess, listens on ESP32 USB, exposes HTTP endpoint on port 5001 (`/latest`). Flask polls this endpoint every N seconds.
+- **Wi-Fi mode** (optional): ESP32 directly POST-requests soil data to Flask `POST /api/soil/ingest`. No daemon launched.
+- **Configuration**: Mode set in `routes/soil.py` (`SENSOR_MODE = "usb"` or `"wifi"`). Port set in `app.py` (`SENSOR_PORT`).
 
-## Database — 5 SQLAlchemy Tables
+### ML Models Layer
+5 independent per-crop disease detection pipelines in `Disease_Models/<crop>/`:
+- **Banana** — Soft-voting ensemble: 3 Keras models (LeNet, ResNet50, InceptionV3) average probabilities
+- **Coffee** — PyTorch ViT (Vision Transformer, CLIP-based)
+- **Corn** — PyTorch ResNet18
+- **Mango** — Keras EfficientNetB7
+- **Paddy** — Keras DenseNet121
 
-| Table | Records |
-|---|---|
-| `soil_readings` | pH, moisture, temp, N, P, K, EC + timestamp |
-| `disease_history` | crop, disease, confidence, severity, action, model metadata |
-| `weather_log` | full meteorological parameters per fetch |
-| `alerts_log` | type, severity, message, resolved flag |
-| `crop_recommendations` | all 8 inputs + crop + confidence + source + alternatives JSON |
+Models cached in `_cache` dict after first load to avoid reload overhead. Each crop has independent `predict_<crop>.py` script with its own image preprocessing & label mapping.
 
----
+## Key Architectural Patterns
 
-## Multilingual Support
-- 3 languages: English, Malayalam, Hindi
-- 354 translation keys each in `en.json`, `ml.json`, `hi.json`
-- Dropdown selector in Settings page — persists to localStorage
-- `applyTranslations()` walks DOM for `data-i18n`, `data-i18n-placeholder`, `data-i18n-title`
-- Dynamic strings (disease action, crop tips) use JSON keys first, LibreTranslate API as fallback
-- All alert messages support `{uv}`, `{rain}`, `{temp}`, `{hum}` interpolation
+### 1. Sensor Dual-Mode Architecture
+**USB mode** (serial daemon):
+```
+ESP32 (USB) → serial_reader.py (separate process) → HTTP server on :5001 (/latest endpoint)
+                                                              ↑
+                                                    Flask polls every N sec
+```
+Why separate process? Graceful handling of sensor disconnects without blocking Flask.
 
----
+**Wi-Fi mode** (direct HTTP):
+```
+ESP32 (Wi-Fi) → POST /api/soil/ingest → Flask directly writes to DB
+```
+No daemon. Set `INGEST_TOKEN` in ESP32 firmware for authentication.
 
-## Key Bugs Fixed During Development
+### 2. ML Model Caching
+Models are loaded once and stored in `_cache` dict in `routes/disease.py`. Subsequent requests reuse cached instances. This avoids TensorFlow/PyTorch initialization overhead on each inference request. Cache keys are crop names.
 
-| Bug | Fix |
-|---|---|
-| Selfie photo returning disease prediction | Implemented `validate_image()` with plant colour profile check |
-| Moderate quality leaf rejected as blurry | Lowered Laplacian blur threshold from 80 → 35 |
-| Theme toggle needed 3 clicks | Removed monkey-patch, unified `s.colourMode` and `s.theme` keys, fixed `applySettings()` conflict |
-| Camera error persisting on next upload | `resetDiseaseResult()` now fully resets `className` and clears all error panel elements |
-| serial_reader.py not reflecting on dashboard | `SENSOR_MODE` was set to `"wifi"` — switched back to `"usb"` in `routes/soil.py` |
-| `_pickle.UnpicklingError` on startup | Pkl files corrupted — needs re-export from training notebook using `pickle.dump()` |
-| Conductivity always missing from sensor | Switched to window-accumulation parser — waits for all 7 values |
-| Page title not translating on language switch | Fixed `pages` registry to use `titleKey`/`subKey` references |
+### 3. Parallel Weather API Integration
+`routes/weather.py` uses `ThreadPoolExecutor` to call OpenWeatherMap and WeatherAPI **simultaneously** (not sequentially). Each API provides different data:
+- **OpenWeatherMap** — Core weather (temp, humidity, condition)
+- **WeatherAPI** — Supplemental (UV index, AQI, rain probability, hourly forecast)
 
----
+Results merged into single JSON response. If one API fails, response includes partial data from the working API.
 
-## Files in the Project
+### 4. Per-Crop Model Modularity
+Each crop is entirely independent:
+- Own model architecture (Keras vs PyTorch, different sizes)
+- Own `predict_<crop>.py` script with image preprocessing
+- Own `labels.json` file mapping class indices to disease names
+- Route `/api/disease/predict/<crop>` auto-generated
+
+Adding a new crop doesn't require code changes outside `Disease_Models/<crop>/` and brief registration in `routes/disease.py`.
+
+### 5. i18n (Internationalization)
+Translation keys stored in JSON files (`static/translations/<lang>.json`). Frontend calls `t(key)` function to interpolate. 347 keys cover all UI strings. Language selected via dropdown in settings page, persisted to localStorage.
+
+### 6. No Tests or Linting
+Project has no pytest/unittest files or linting configuration (black, flake8, etc.). This is a pure Flask dev setup. When adding code, follow existing style conventions (Snake_case for functions, docstrings for APIs).
+
+## Configuration Before Running
+
+**See README.md for detailed installation steps.** Key configurations:
+
+1. **API Keys** (`routes/weather.py`):
+   ```python
+   OWM_API_KEY  = "your_openweathermap_key"
+   WAPI_API_KEY = "your_weatherapi_key"
+   ```
+
+2. **Sensor Mode** (`routes/soil.py`):
+   ```python
+   SENSOR_MODE = "usb"   # USB serial cable (default)
+   # or
+   SENSOR_MODE = "wifi"  # ESP32 Wi-Fi push mode
+   ```
+
+3. **Serial Port** (`app.py`, USB mode only):
+   ```python
+   SENSOR_PORT = "COM5"           # Windows
+   # or
+   SENSOR_PORT = "/dev/ttyUSB0"   # Linux
+   ```
+
+4. **Model Files**: Download from HuggingFace (see README) → place in `Disease_Models/<crop>/`
+
+5. **Crop Recommendation Models**: Place `.pkl` files in `Rec_Models/`
+
+## Common Development Tasks
+
+### Adding a New Crop Disease Model
+1. Create `Disease_Models/<crop>/` directory
+2. Add `labels.json` (mapping class indices to disease names)
+3. Add `predict_<crop>.py` with inference function signature:
+   ```python
+   def predict(image_path: str) -> dict:
+       # Return {"disease": str, "confidence": float, "severity": str}
+   ```
+4. Download model weights (.h5 or .pt) into same directory
+5. Register in `routes/disease.py` (add to `SUPPORTED_CROPS` list)
+6. Flask auto-discovers route `/api/disease/predict/<crop>`
+
+### Debugging the Serial Daemon
+- Check if daemon started: `SENSOR_MODE = "usb"` in `routes/soil.py`?
+- Check if port configured: `SENSOR_PORT` in `app.py`?
+- Test manually: `python serial_reader.py --port COM5` (should print received data)
+- Flask endpoint: `GET /api/soil/latest` should return latest reading (empty if daemon not sending)
+- Logs: Check Flask console for serial errors
+
+### Adding a New Frontend Page
+1. Create `templates/sections/<page>.html` (template fragment)
+2. Add page button/nav item in `templates/base.html`
+3. Add page route in `static/js/app.js` (`showPage()` function)
+4. Add translation keys in `static/translations/<lang>.json`
+5. Flask serves via `base.html` (single entry point), JavaScript switches content
+
+## Development Workflow
+
+- **Hot reload enabled** — Changes to `routes/`, `database.py`, `app.py` automatically restart server
+- **Frontend changes** (JS/CSS) take effect on page refresh (no server restart needed)
+- **CORS enabled** (all origins) — Useful for local development, consider restricting in production
+- **Check browser console** for frontend errors (API failures, JS exceptions, translation missing keys)
+- **DevTools Network tab** — Debug API calls, inspect request/response payloads
+- **Database queries** — Use SQLAlchemy directly in routes, no query builder needed
+
+## File Structure Reference
 
 ```
 agrisense/
-├── app.py                        # Flask entry, blueprint registration, serial daemon auto-launch
-├── database.py                   # 5 SQLAlchemy models
-├── serial_reader.py              # USB serial daemon (2 threads)
-├── AgriSense_ESP32_WiFi.ino      # Arduino Wi-Fi firmware
+├── app.py                      # Flask app + serial daemon launcher
+├── database.py                 # SQLAlchemy models
+├── serial_reader.py            # USB serial daemon (separate process)
 ├── requirements.txt
-├── README.md
-├── .gitignore
-├── .env.example
 ├── routes/
-│   ├── soil.py                   # SENSOR_MODE="usb", USB+WiFi dual mode
-│   ├── weather.py                # Dual API, 3-day forecast
-│   ├── disease.py                # ML pipeline, validate_image(), BLUR_THRESHOLD=35
-│   ├── crop.py                   # LR model, pkl loading
-│   └── history.py                # 5-category history + soil endpoints
+│   ├── soil.py                 # Sensor API (USB/Wi-Fi modes)
+│   ├── weather.py              # Dual weather API (parallel fetching)
+│   ├── disease.py              # Disease detection (per-crop models)
+│   ├── crop.py                 # Crop recommendation
+│   ├── history.py              # History/analytics
+│   └── __init__.py
 ├── templates/
-│   ├── base.html                 # Sidebar, header, theme toggle
-│   └── sections/
-│       ├── overview.html         # 4 stat cards, weather, soil status, alerts
-│       ├── weather.html          # Full weather page, 3-day forecast
-│       ├── soil.html             # Read Sensor button, 7-param display, USB/WiFi badge
-│       ├── crops.html            # 8-field form, Fill from Sensor
-│       ├── disease.html          # Upload + camera modal, result cards
-│       ├── history.html          # 5-tab interface
-│       └── settings.html         # Language, theme, units, farm profile
+│   ├── base.html               # Main shell + sidebar
+│   └── sections/               # 7 page templates
 ├── static/
-│   ├── js/app.js                 # ~3500+ lines, all frontend logic
-│   ├── css/
-│   │   ├── tailwind.min.css      # Local Tailwind (offline-safe, 30KB)
-│   │   └── fonts-local.css       # System font fallbacks for offline mode
-│   └── translations/
-│       ├── en.json               # 354 keys
-│       ├── ml.json               # 354 keys
-│       └── hi.json               # 354 keys
-└── Disease_Models/
-    └── */labels.json             # Label files only (models on HuggingFace)
+│   ├── js/app.js               # Frontend SPA engine (3,134 lines)
+│   ├── css/                    # Tailwind (minified)
+│   └── translations/           # i18n JSON files (EN/ML/HI)
+├── Disease_Models/
+│   ├── banana/                 # 3 ensemble models + labels
+│   ├── coffee/                 # PyTorch ViT + labels
+│   ├── corn/                   # PyTorch ResNet18 + labels
+│   ├── mango/                  # Keras EfficientNetB7 + labels
+│   └── paddy/                  # Keras DenseNet121 + labels
+├── Rec_Models/                 # Crop recommendation .pkl files
+├── instance/                   # Runtime dir (auto-created)
+└── uploads/                    # User-uploaded images
 ```
 
----
+## Useful API Endpoints (for frontend development)
 
-## API Endpoints (16 total)
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/soil/read` | POST | Trigger sensor read (USB mode) |
+| `/api/soil/latest` | GET | Latest sensor reading |
+| `/api/soil/history` | GET | Paginated soil readings |
+| `/api/weather` | GET | Current + 3-day forecast (merged) |
+| `/api/disease/predict/<crop>` | POST | Upload image → disease detection |
+| `/api/crop/recommend` | POST | Soil/climate params → crop recommendation |
+| `/api/history/disease` | GET | Disease detection history |
+| `/api/history/weather` | GET | Weather log |
+| `/api/history/crop` | GET | Crop recommendations log |
+| `/api/history/alerts` | GET | Alert logs (disease + weather) |
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/` | Serve dashboard |
-| GET | `/api/weather` | Dual-source weather fetch |
-| GET | `/api/weather/search` | Location autocomplete |
-| POST | `/api/soil/read` | Read sensor (USB) or get latest (WiFi) |
-| POST | `/api/soil/ingest` | ESP32 Wi-Fi push endpoint |
-| GET | `/api/soil/latest` | Latest soil reading |
-| GET | `/api/soil/history` | Paginated soil readings |
-| DELETE | `/api/soil/clear` | Clear soil log |
-| GET | `/api/soil/mode` | Returns "usb" or "wifi" |
-| POST | `/api/disease/analyze` | Run disease inference |
-| GET | `/api/disease/crops` | Model status per crop |
-| POST | `/api/crop-recommend` | Crop recommendation |
-| GET | `/api/history/soil,disease,weather,alerts,crop` | Per-category history |
-| DELETE | `/api/history/*/clear` | Clear category |
-| GET | `/api/history/summary` | 5-category counts |
-| GET | `/api/seasons` | Available seasons |
+## Production Notes
 
----
-
-## Hardware Setup
-
-```
-Soil Sensor (12V) → MAX RS485 (A/B lines) → ESP32 GPIO16/17/4 → USB → PC
-                                                                  ↓ Wi-Fi (optional)
-                                                             Flask :5000
-```
-
-- DE/RE pin (GPIO4) controls RS485 bus direction
-- CP2102/CH340 chip creates virtual COM port (COM5 on Windows)
-- `serial_reader.py` auto-launched by `app.py` on startup (USB mode)
-- Flask binds to `0.0.0.0:5000` for Wi-Fi accessibility
-
----
-
-## Documents Generated
-
-1. `AgriSense_Abstract.docx` — Project abstract (9 sections)
-2. `AgriSense_ProposedSystem.docx` — Three-layer architecture document
-3. `AgriSense_DetailedProposedSystem.docx` — 515-paragraph detailed system
-4. `AgriSense_ImplementationSteps.docx` — 11-phase implementation guide
-5. `AgriSense_Testing.docx` — 924-paragraph 5-level testing document
-6. `AgriSense_Final.zip` — Complete project download
-
----
-
-## Pending / Known Issues
-
-1. **pkl files corrupted** — `crop_recommendation_model.pkl` fails with `UnpicklingError`. Re-export from training notebook using `pickle.dump()`
-2. **History tab order** — Currently: Disease → Weather → Alerts → Crop → Soil. Rename and reorder pending (last request in conversation)
-3. **Tailwind offline** — Local `tailwind.min.css` deployed but `base.html` CDN tags still need manual replacement (instructions provided)
-4. **Model training accuracies** — Blank cells left in `AgriSense_Testing.docx` for Banana and Corn accuracy scores — need to be filled in manually
-
----
+- CORS enabled for all origins — restrict to specific domains in production
+- No authentication layer — suitable for local farm network, add auth if exposing externally
+- Serial daemon spawns as subprocess — ensure proper cleanup if deploying as systemd service
+- Model files (~500MB total) — consider offloading to remote storage or containerizing
+- Database file unencrypted — use proper filesystem permissions or encrypt in production
