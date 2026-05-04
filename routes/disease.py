@@ -440,12 +440,64 @@ def _get_model(crop: str) -> dict:
         _cache[crop] = _LOADERS[crop]()
     return _cache[crop]
 
+def _prediction_entropy(probs: dict) -> float:
+    """
+    Shannon entropy of the probability distribution.
+    High entropy = model is uncertain / spread across many classes
+                 = likely wrong crop or ambiguous image.
+    Low entropy  = model is confident about one class.
+    """
+    values = np.array(list(probs.values()), dtype=np.float64)
+    values = values / (values.sum() + 1e-9)          # normalise to sum=1
+    return float(-np.sum(values * np.log(values + 1e-9)))
+
+
 def run_inference(crop: str, img: Image.Image) -> dict:
     entry  = _get_model(crop)
     result = _PREDICTORS[crop](entry, img)
-    # Normalise to top-3 predictions list
+
+    # ── Normalise to top-3 predictions list ───────────────────────────────────
     top3 = sorted(result["probs"].items(), key=lambda x: x[1], reverse=True)[:3]
     result["predictions"] = [{"label": k, "confidence": v} for k, v in top3]
+
+    top_confidence = result["confidence"]
+    probs          = result["probs"]
+
+    # ── Check 1: Confidence threshold ─────────────────────────────────────────
+    min_conf = CONFIDENCE_THRESHOLDS.get(crop, 45)
+    if top_confidence < min_conf:
+        result["low_confidence"] = True
+        result["confidence_threshold"] = min_conf
+        result["uncertainty_reason"] = "confidence"
+        result["uncertainty_hint"] = (
+            f"Top prediction confidence ({top_confidence}%) is below the minimum "
+            f"threshold ({min_conf}%) for {crop.title()}. "
+            f"The uploaded leaf may not be a {crop.title()} leaf, "
+            f"or the image quality may be insufficient."
+        )
+    else:
+        result["low_confidence"] = False
+
+    # ── Check 2: Entropy check ────────────────────────────────────────────────
+    entropy       = _prediction_entropy(probs)
+    max_entropy   = ENTROPY_THRESHOLDS.get(crop, 1.4)
+    result["entropy"] = round(entropy, 4)
+
+    if entropy > max_entropy:
+        result["high_entropy"] = True
+        if not result["low_confidence"]:
+            # Only override uncertainty_reason if confidence check didn't flag it
+            result["low_confidence"]      = True
+            result["uncertainty_reason"]  = "entropy"
+            result["uncertainty_hint"] = (
+                f"The model's predictions are spread across multiple classes "
+                f"(entropy={entropy:.2f}, threshold={max_entropy}), "
+                f"suggesting the input may not be a {crop.title()} leaf. "
+                f"Please verify the selected crop matches the uploaded image."
+            )
+    else:
+        result["high_entropy"] = False
+
     return result
 
 
@@ -527,6 +579,34 @@ BLUR_THRESHOLD       = 35    # Laplacian variance below this = too blurry
                               # Typical scores: very blurry<30, moderate=80-200, sharp=200+
 BRIGHTNESS_MIN       = 20    # Mean pixel value below this = too dark
 BRIGHTNESS_MAX       = 240   # Mean pixel value above this = overexposed
+
+# ── Inference quality checks ──────────────────────────────────────────────────
+# Per-crop minimum confidence (%) — predictions below this are flagged as uncertain.
+# If the model scores below this threshold, the input may not be the selected crop.
+# Tune lower to be more permissive, higher to be stricter.
+CONFIDENCE_THRESHOLDS = {
+    "banana": 45,   # Ensemble of 3 models — well calibrated
+    "coffee": 35,   # CLIP text-prompt scores run lower by nature
+    "corn":   50,   # ResNet18 — straightforward 4-class
+    "mango":  45,   # EfficientNetB7 — 8 classes
+    "paddy":  45,   # DenseNet121 — 10 classes
+}
+
+# Entropy threshold — high entropy = model is confused across all classes
+# = likely wrong crop uploaded. Max possible entropy depends on class count:
+#   4 classes  → max entropy ≈ 1.39
+#   7 classes  → max entropy ≈ 1.95
+#   8 classes  → max entropy ≈ 2.08
+#   10 classes → max entropy ≈ 2.30
+# Rule of thumb: flag if entropy > 70% of the theoretical maximum.
+# These are pre-calculated per crop:
+ENTROPY_THRESHOLDS = {
+    "banana": 1.37,   # 70% of ln(7)  = 1.95
+    "coffee": 1.12,   # 70% of ln(5)  = 1.61
+    "corn":   0.97,   # 70% of ln(4)  = 1.39
+    "mango":  1.46,   # 70% of ln(8)  = 2.08
+    "paddy":  1.61,   # 70% of ln(10) = 2.30
+}
 
 def _laplacian_var(gray: np.ndarray) -> float:
     """Fast Laplacian variance blur score — no OpenCV needed."""
@@ -678,17 +758,23 @@ def api_analyze():
         logger.warning("DB save failed (non-fatal): %s", db_err)
 
     return jsonify({
-        "crop":        crop,
-        "top_disease": top["label"],
-        "confidence":  top["confidence"],
-        "severity":    top["severity"],
-        "colour":      top["colour"],
-        "action":      top["action"],
-        "predictions": predictions,
-        "meta":        result.get("meta", ""),
-        "per_model":   result.get("per_model", {}),
-        "manual_crop": True,
-        "crop_confidence": 100.0,
+        "crop":               crop,
+        "top_disease":        top["label"],
+        "confidence":         top["confidence"],
+        "severity":           top["severity"],
+        "colour":             top["colour"],
+        "action":             top["action"],
+        "predictions":        predictions,
+        "meta":               result.get("meta", ""),
+        "per_model":          result.get("per_model", {}),
+        "manual_crop":        True,
+        "crop_confidence":    100.0,
+        # ── Uncertainty flags ──────────────────────────────────────────────
+        "low_confidence":     result.get("low_confidence",    False),
+        "high_entropy":       result.get("high_entropy",      False),
+        "entropy":            result.get("entropy",           0.0),
+        "uncertainty_reason": result.get("uncertainty_reason", None),
+        "uncertainty_hint":   result.get("uncertainty_hint",  None),
     })
 
 

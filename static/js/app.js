@@ -2154,6 +2154,32 @@ function renderDiseaseResult(data) {
   if (hint) hint.classList.add('hidden');
   document.getElementById('dis-result').classList.remove('hidden');
 
+  // ── Uncertainty warning banner ─────────────────────────────────────────────
+  const warnEl = document.getElementById('dis-uncertainty-banner');
+  if (warnEl) {
+    if (data.low_confidence) {
+      const icon    = data.uncertainty_reason === 'entropy' ? 'psychology' : 'warning';
+      const titleKey= data.uncertainty_reason === 'entropy'
+        ? 'disease.uncertain_entropy' : 'disease.uncertain_confidence';
+      warnEl.innerHTML = `
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-yellow-400 text-xl flex-shrink-0 mt-0.5">${icon}</span>
+          <div>
+            <p class="text-yellow-300 font-semibold text-sm font-mono">${t(titleKey)}</p>
+            <p class="text-yellow-200/80 text-xs mt-1 leading-relaxed">${data.uncertainty_hint || ''}</p>
+            <p class="text-yellow-200/60 text-xs mt-1.5 font-mono">
+              ${t('disease.conf_label')}: ${data.confidence}% &nbsp;|&nbsp;
+              ${t('disease.entropy_label')}: ${(data.entropy || 0).toFixed(3)}
+            </p>
+          </div>
+        </div>`;
+      warnEl.classList.remove('hidden');
+    } else {
+      warnEl.classList.add('hidden');
+      warnEl.innerHTML = '';
+    }
+  }
+
   const crop   = data.crop;
   const top    = data.predictions[0];
   const colour = top.colour || '#6b7280';
@@ -2310,6 +2336,8 @@ function resetDiseaseResult() {
   const errMsg   = document.getElementById('dis-error-msg');
   const errTitle = document.getElementById('dis-error-title');
 
+  const uncWarn = document.getElementById('dis-uncertainty-banner');
+  if (uncWarn) { uncWarn.classList.add('hidden'); uncWarn.innerHTML = ''; }
   if (errWrap)  { errWrap.className  = 'hidden rounded-xl p-5 flex flex-col gap-3 border bg-red-500/5 border-red-500/20'; }
   if (errIcon)  { errIcon.className  = 'material-symbols-outlined text-red-400'; errIcon.textContent = 'error'; }
   if (errIconW) { errIconW.className = 'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-red-500/10 border border-red-500/20'; }
