@@ -86,7 +86,6 @@ AgriSense is an intelligent agricultural platform that combines **crop disease d
 ---
 
 ## 📁 Project Structure
-
 ```
 agrisense/
 ├── app.py                   # Flask app entry point, sensor daemon launcher
@@ -168,6 +167,11 @@ Add your OpenWeatherMap API key in `routes/weather.py`:
 ```python
 OPENWEATHER_API_KEY = "your_key_here"
 ```
+Add your WeatherAPI key in `routes/weather.py`:
+```python
+WEATHER_API_KEY = "your_key_here"
+```
+
 
 ### **Database**
 - Automatically created as `instance/agrisense.db` (SQLite)
