@@ -306,7 +306,7 @@ Contributions welcome! Please:
 
 - **Issues**: Check GitHub issues or create a new one
 - **Docs**: See inline comments in source files
-- **Contact**: [Your contact info]
+- **Contact**: <adithyakrishnatk0604@gmail.com>   
 
 ---
 
