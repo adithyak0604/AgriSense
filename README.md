@@ -310,4 +310,4 @@ Contributions welcome! Please:
 
 ---
 
-**Happy farming! 🌾** — AgriSense Team
+**Happy farming! 🌾** - AgriSense Team
