@@ -1,4 +1,4 @@
-# 🌾 AgriSense — Smart Farm Intelligence Dashboard
+# 🌾 AgriSense - Smart Farm Intelligence Dashboard
 
 AgriSense is an intelligent agricultural platform that combines **crop disease detection**, **soil monitoring**, **weather insights**, and **crop recommendations** to help farmers make data-driven decisions. Powered by deep learning models and real-time sensor data, it provides actionable intelligence for modern farming.
 
